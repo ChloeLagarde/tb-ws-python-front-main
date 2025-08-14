@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface de récupération des données</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        pre {
+            text-align: left;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Récupération des données de l'URL</h1>
+    <input type="text" id="urlInput" placeholder="Entrez l'URL complète" />
+    <button onclick="fetchData()">Récupérer les données</button>
+    <pre id="result">Les données apparaîtront ici...</pre>
+
+    <script>
+        function fetchData() {
+            console.log('Début de l\'exécution du fetch');
+
+            const startTime = Date.now(); // Temps de début de l'exécution
+            const urlInput = document.getElementById('urlInput').value;
+            if (!urlInput) {
+                alert('Veuillez entrer une URL.');
+                console.log('Exécution interrompue : URL manquante');
+                return;
+            }
+
+            const url = `http://localhost:8080/fetch-data?url=${encodeURIComponent(urlInput)}`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP : ${response.status}`);
+                    }
+                    return response.json(); // Récupère la réponse en tant que JSON
+                })
+                .then(data => {
+                    document.getElementById("result").textContent = JSON.stringify(data, null, 2); // Affiche les données JSON formatées
+                })
+                .catch(error => {
+                    console.log('Erreur survenue pendant le fetch');
+                    console.error(error);
+                    document.getElementById("result").textContent = `Erreur : ${error.message}`;
+                });
+        }
+    </script>
+</body>
+</html>

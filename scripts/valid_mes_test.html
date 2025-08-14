@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation MES ARI</title>
+
+    <script src="https://kit.fontawesome.com/8c1d7360d9.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./valid_mes.css" />
+    <script type="module" src="./valid_mes.js"></script>
+    
+   <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="content">
+        <div id="rectangleBleu" class="container">
+            <h1 class="title">Portail de validation de MES</h1>
+            
+            <div id="rectangleIDservice" class="form-group">
+                <label for="zone_texte">ID de service</label>
+                <input type="text" id="zone_texte" placeholder="Entrez votre ID" />
+            </div>
+            
+            <button id="Bouton" class="btn-verification">
+                <b>Vérification</b>
+            </button>
+            
+            <button id="detailsButton" class="hidden">
+                <b>Analyse avec détails</b>
+            </button>
+            
+            <div id="rectangleDonnee" style="display: none;"></div>
+        </div>
+    </div>
+</body>
+</html>

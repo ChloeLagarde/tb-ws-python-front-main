@@ -1,0 +1,914 @@
+/* ========================================================================
+   RESET ET BASE
+   ======================================================================== */
+   body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', Arial, sans-serif; 
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+/* ========================================================================
+   CONTENEUR PRINCIPAL STYLE WDM
+   ======================================================================== */
+.content {
+    text-align: center;
+    min-height: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    background-color: #3498db;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    color: #ffffff;
+    text-align: left;
+    padding: 30px;
+    margin: 20px auto;
+    display: inline-block;
+    width: auto;
+    max-width: 1200px;
+    box-sizing: border-box;
+    min-width: 600px;
+}
+
+/* ========================================================================
+   STRUCTURES PRINCIPALES ADAPTÉES
+   ======================================================================== */
+#rectangleBleu {
+    background-color: #3498db;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    color: #ffffff;
+    padding: 30px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 2600px;
+    min-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Titre principal */
+#rectangleBleu h1.title {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 30px;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+#rectangleDonnee {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    color: #000000;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow: auto;
+    max-height: none;
+    font-family: 'Courier New', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#rectangleGris {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 1px #000000;
+    color: #ffffff;
+}
+
+#rectangleIDservice {
+    margin-bottom: 20px;
+}
+
+#rectangleIDservice.has-multiple-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ========================================================================
+   FORMULAIRES STYLE WDM
+   ======================================================================== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 8px;
+    color: #ffffff;
+}
+
+.form-group input[type="text"], .flex-input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#zone_texte, #ipInput, #slotInput {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================================================
+   BOUTONS STYLE WDM
+   ======================================================================== */
+#Bouton, .btn-verification {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    margin: 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    background-color: #fff;
+    color: #3498db;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#Bouton:hover, .btn-verification:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#Bouton:disabled, .btn-verification:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#detailsButton {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    margin: 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    background-color: #fff;
+    color: #3498db;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#detailsButton:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#detailsButton.hidden {
+    display: none;
+}
+
+/* ========================================================================
+   TABLEAUX
+   ======================================================================== */
+table {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    width: 96%;    /* 96% of 1800px */
+    font-size: 16px;  /* 1rem */
+    border-spacing: 0;
+}
+
+th, td {
+    border: 0;
+    padding: 12px;
+    text-align: left; /* ⬅️ Corrigé ici */
+}
+
+th {
+    text-align: left;
+    background-color: #E0E0E0; 
+    color: #333;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(odd) {
+    background-color: #fafafa;
+}
+
+.table-centree td,
+.table-centree th {
+    text-align: center;
+}
+
+/* ========================================================================
+   NOTIFICATIONS
+   ======================================================================== */
+.carre-vert {
+    background-color: #4CAF6A;  
+    color: white;
+    width: 90%;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.carre-rouge {
+    background-color: #E53935;  
+    color: white;
+    width: 90%;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.carre-gris {
+    background-color: #3f3f3f;  
+    color: white;
+    width: 90%;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+/* ========================================================================
+   LOADER
+   ======================================================================== */
+.loader {
+    display: inline-block;
+    font-size: 1.5rem;
+    margin-right: 5px;
+}
+
+.loader::after {
+    display: inline-block;
+    animation: loader-animation 1.5s infinite;
+    content: "";
+}
+
+@keyframes loader-animation {
+    0% {
+        content: "."; 
+    }
+    33% {
+        content: ". .";
+    }
+    66% {
+        content: ". . .";
+    }
+    100% {
+        content: "";
+    }
+}
+
+/* ========================================================================
+   SÉLECTION ET ÉTIQUETTES
+   ======================================================================== */
+.select-section {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* Sélecteur */
+.nego-select {
+    width: auto;
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.nego-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* ========================================================================
+   SURHIGHLIGHT
+   ======================================================================== */
+.surligne {
+    background-color: lawngreen;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.surligneR {
+    background-color : red;
+    padding: 5px;
+    border-radius : 3px;
+}
+
+/* ========================================================================
+   BOÎTES ARRONDIS
+   ======================================================================== */
+.rounded-box {
+    border-radius: 5px;
+    border: 0.5px solid #8B8B8B;
+    background-color: rgba(129, 129, 130, 0.50);
+    width: 80%;
+}
+
+/* ========================================================================
+   MEDIA QUERIES
+   ======================================================================== */
+@media (max-width: 768px) {
+    #rectangleBleu, #rectangleDonnee, #rectangleGris, #rectangleIDservice {
+        width: 90%;
+        left: 5%;
+    }
+
+    #rectangleGris, #rectangleIDservice {
+        top: auto;
+        bottom: 0;
+        margin-bottom: 10px;
+    }
+
+    #texteMES, #texteService, #zone_texte, #Bouton {
+        font-size: 1rem;
+    }
+
+    #zone_texte {
+        width: 40%;
+    }
+
+    #Bouton {
+        width: 30%;
+    }
+}
+
+@media (max-width: 480px) {
+    #rectangleGris, #rectangleIDservice {
+        width: 95%;
+        left: 2.5%;
+    }
+
+    #zone_texte {
+        width: 70%;
+    }
+
+    #Bouton {
+        width: 50%;
+    }
+}
+
+/* ========================================================================
+   DÉTAILS ET ANIMATIONS
+   ======================================================================== */
+.details-row {
+    overflow: hidden;
+    height: 0;
+    transition: height 0.3s ease;
+}
+
+.details-row.active {
+    height: auto;
+    overflow-y: auto;
+}
+
+.details-content {
+    padding: 0;
+    font-size: 0.85em; 
+    line-height: 1; 
+}
+
+.chevron {
+    display: inline-table;
+    width: 10px;
+    height: 10px; 
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+.chevron.down {
+    transform: rotate(90deg);
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+}
+
+/* ========================================================================
+   BOUTON DÉTAILS (caché par défaut)
+   ======================================================================== */
+#detailsButton.hidden {
+    display: none;
+}
+
+#detailsButton {
+    width: 60%;
+    height: 50px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #5B9BD5;
+    margin: 10px auto 0 auto;
+    display: none; /* C'est caché par défaut */
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#detailsButton:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#detailsButton:active {
+    background-color: #e9ecef;
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Quand le bouton n'a pas la classe "hidden", il devient visible */
+#detailsButton:not(.hidden) {
+    display: flex;
+}
+
+
+/* ========================================================================
+   STYLE SPÉCIFIQUE POUR LE SÉLECTEUR
+   ======================================================================== */
+.nego-select option[selected] {
+    font-weight: bold;
+}
+
+.nego-select option::after {
+    content: attr(data-selected);
+}
+
+/* ========================================================================
+   ENTRÉES IP ET SLOT
+   ======================================================================== */
+#ipInput, #slotInput {
+    width: 60%;
+    height: 60%;
+    border-radius: 10px;
+    border: 1px solid;
+    background: #ffffff;
+    font-size: 1.25rem;
+    margin-left: 10px;
+}
+
+
+
+.chevron {
+  font-weight: bold;
+  user-select: none;
+  font-size: 1.2em;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  color: #555;
+}
+
+.carte-row {
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.carte-row:hover {
+  background-color: #d0e6ff;
+}
+
+.details-row td {
+  background-color: #f9fbff;
+  padding: 12px 15px;
+  border-top: 1px solid #ddd;
+  font-size: 0.95em;
+  color: #333;
+}
+
+/* Animation pour la rotation du chevron lorsqu’on ouvre/ferme */
+.details-row[style*="display: table-row"] + tr .chevron,
+.chevron.open {
+  transform: rotate(90deg);
+  color: #1a73e8;
+}
+
+/* Ajout d’une bordure et ombre légère pour le tableau */
+table.carte {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Pour bien séparer les lignes */
+.carte-row td {
+  padding: 10px 15px;
+  vertical-align: middle;
+}
+
+
+.site-monitoring-container {
+    position: absolute;
+    top: -70px;
+    right: -420px;
+    margin: 20px;
+}
+.site-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    margin: 6px 0;
+    width: 300px;
+}
+.site-info {
+    display: flex;
+    flex-direction: column;
+}
+.site-name {
+    font-size: 1rem;
+    font-weight: bold;
+}
+.site-status {
+    font-size: 0.9rem;
+    margin-top: 2px;
+}
+.indicator {
+    width: 16px;
+    height: 16px;
+    margin-left: 10px;
+    border-radius: 50%;
+    background: gray;
+    transition: background 0.3s;
+}
+.rectangles-superposes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* fixe la distance entre rectangleBleu et rectangleGris */
+}
+
+/* history.css */
+
+.history-container {
+    position: absolute;
+    left: 930px;
+    top: 300px;
+    width: 315px;
+    height: auto;
+    min-height: 72px;
+    border-radius: 10px;
+    border: 1.5px solid #d0d0d0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.monitoring-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.history-list li {
+    display: inline-block;
+}
+
+.used-service-btn {
+    padding: 6px 10px;
+    background-color: #f0f8ff;
+    border: 1px solid #3498db;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.used-service-btn:hover {
+    background-color: #d6ecfa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================================================
+   STYLES POUR LES RECTANGLES DES PORTS (afficherPBB et afficherService)
+   ======================================================================== */
+
+.port-box {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.port-box p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.port-box h4, .port-box h5 {
+    margin: 10px 0 8px 0;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Styles pour les statuts colorés */
+.status-up {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-down {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.alarm-none {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.alarm-active {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Styles pour les puissances optiques */
+.power-good {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.power-warning {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.power-danger {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Styles pour les informations de seuils */
+.threshold-info {
+    font-size: 12px;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Style pour les messages "pas de données" */
+.no-data {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #856404;
+    text-align: center;
+}
+
+/* Style pour les erreurs DNS */
+.dns-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #721c24;
+}
+
+/* Style pour les tableaux dans les informations générales */
+.table_olt {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background-color: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table_olt th,
+.table_olt td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table_olt_th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    width: 200px;
+}
+
+.table_olt tr:last-child td {
+    border-bottom: none;
+}
+
+/* Titres des sections */
+h2 {
+    color: #2c3e50;
+    font-size: 20px;
+    margin: 20px 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+}
+
+h3 {
+    color: #34495e;
+    font-size: 18px;
+    margin: 15px 0 10px 0;
+}
+
+/* Style pour séparer les équipements */
+hr {
+    border: none;
+    border-top: 2px solid #e9ecef;
+    margin: 20px 0;
+}
+
+/* ========================================================================
+   STYLES POUR LES STATUTS ET PUISSANCES OPTIQUES
+   ======================================================================== */
+
+/* Classes pour les puissances optiques */
+.power-good {
+    background-color: #5cb85c !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.power-warning {
+    background-color: #f0ad4e !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.power-danger {
+    background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* Classes pour les statuts généraux */
+.status-up {
+    background-color: #5cb85c !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.status-down {
+    background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.status-warning {
+    background-color: #f0ad4e !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* Classes pour les alarmes */
+.alarm-none {
+    background-color: #5cb85c !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.alarm-active {
+    background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* Style pour les informations de seuils */
+.threshold-info {
+    font-size: 0.9em !important;
+    color: #666 !important;
+    font-style: italic !important;
+    margin-top: 5px !important;
+}
+
+/* Amélioration des boîtes de ports */
+.port-box {
+    border: 1px solid #ddd !important;
+    padding: 15px !important;
+    margin: 10px 0 !important;
+    border-radius: 5px !important;
+    background-color: #f9f9f9 !important;
+}
+
+.port-box h4 {
+    color: #3498db !important;
+    margin-top: 15px !important;
+    margin-bottom: 10px !important;
+    border-bottom: 1px solid #ddd !important;
+    padding-bottom: 5px !important;
+}
+
+/* Style pour les erreurs DNS */
+.dns-error {
+    background-color: #fff3cd !important;
+    padding: 15px !important;
+    border-radius: 5px !important;
+    margin: 20px 0 !important;
+    border-left: 4px solid #ffc107 !important;
+    color: #856404 !important;
+}
+
+/* Style pour les messages d'absence de données */
+.no-data {
+    background-color: #f8f9fa !important;
+    padding: 15px !important;
+    border-radius: 5px !important;
+    margin: 20px 0 !important;
+    color: #6c757d !important;
+}

@@ -1,0 +1,869 @@
+import MappingEMUX from './mappingEMUX.js';
+
+
+export function afficherOLT(data) {
+    console.log('afficherOLT()');
+
+    const rectangleDonnee = document.getElementById('rectangleDonnee');
+    
+    if (!rectangleDonnee) {
+        console.error("L'élément rectangleDonnee est introuvable dans le DOM.");
+        return;
+    }
+
+    rectangleDonnee.innerHTML = '';
+
+    let content = '<table class="table_olt">';
+
+    const statusTemplate = (label, status, details = '') => `
+        <tr><td class="table_olt_th">${label}</td>
+        <td style="text-align:center;font-weight:700;color:white;padding:12px;border-radius:50px;background-color:${status === 'OK' ? '#5cb85c' : 'red'};">${status}</td></tr>
+        <tr><td colspan="2"><pre>${details}</pre></td></tr>
+    `;
+
+    // Modification de matchStatus pour éviter l'erreur
+    const matchStatus = (test, pattern) => test && test.match(pattern) ? 'OK' : 'KO';
+
+    // PING
+    content += statusTemplate('PING', matchStatus(data['ping'], /time\=/), data['ping']);
+
+    // SPECTRUM
+    content += statusTemplate('SPECTRUM', matchStatus(data['spectrum'], /en prod/), data['spectrum']);
+
+    // SPECTRUM IHUB (si type = 7360)
+    if (data['type'] === '7360') {
+        content += statusTemplate('SPECTRUM IHUB', matchStatus(data['spectrum ihub'], /en prod/), data['spectrum ihub']);
+    }
+
+    // Vérification de l'existence de 'ssh' et 'show equipment slot'
+    if (data['ssh'] && data['ssh']['show equipment slot']) {
+        const carteStatus = (data['ssh']['show equipment slot'].match(/lt\:1\/1\/1\s+fwlt-c\s+yes\s+no-error\s+available/) &&
+                             data['ssh']['show equipment slot'].match(/lt\:1\/1\/4\s+felt-b\s+yes\s+no-error\s+available/)) ? 'OK' : 'KO';
+        content += statusTemplate('CARTES', carteStatus, data['ssh']['show equipment slot']
+            .replace(/\r\n[\=]+\r\n/g, '')
+            .replace(/\#show equipment slot|slot table/g, '')
+            .replace(/olt\-\w+\-\d+/g, ''));
+    } else {
+        content += statusTemplate('CARTES', 'KO', 'Données non disponibles.');
+    }
+
+    // REDONDANCE
+    if (data['ssh'] && data['ssh']['show equipment protection-element']) {
+        const redondanceStatus = (data['ssh']['show equipment protection-element'].match(/nt-a\s+providing-service\s+1\s+normal\s+none/) &&
+                                  data['ssh']['show equipment protection-element'].match(/nt-b\s+hot-standby\s+1\s+normal\s+none/)) ? 'OK' : 'KO';
+        content += statusTemplate('REDONDANCE', redondanceStatus, data['ssh']['show equipment protection-element']
+            .replace(/\r\n[\=]+\r\n/g, '')
+            .replace(/\#show equipment protection-element|protection-element table/g, '')
+            .replace(/olt\-\w+\-\d+/g, ''));
+    } else {
+        content += statusTemplate('REDONDANCE', 'KO', 'Données non disponibles.');
+    }
+
+    // ONT
+    if (data['ssh'] && data['ssh']['show equipment ont sw-version']) {
+        const ontStatus = (data['ssh']['show equipment ont sw-version'].match(/3FE49327AAA/) &&
+                           data['ssh']['show equipment ont sw-version'].match(/3FE46541AAF/) &&
+                           data['ssh']['show equipment ont sw-version'].match(/3TN00715BAA/)) ? 'OK' : 'KO';
+        content += statusTemplate('ONT', ontStatus, data['ssh']['show equipment ont sw-version']
+            .replace(/\r\n[\=]+\r\n/g, '')
+            .replace(/\#show equipment ont sw-version|sw-version table/g, '')
+            .replace(/olt\-\w+\-\d+/g, ''));
+    } else {
+        content += statusTemplate('ONT', 'KO', 'Données non disponibles.');
+    }
+
+    // ROUTE STATIQUE
+    if (data['ssh'] && data['ssh']['show router static-route']) {
+        const routeStatus = (data['ssh']['show router static-route'].match(/No\. of Static Routes\: 1/) &&
+                             data['ssh']['show router static-route'].match(/olt\-\w+[179]{2}\-\d+/)) ? 'OK' : 'KO';
+        content += statusTemplate('ROUTE STATIQUE', routeStatus, data['ssh']['show router static-route']
+            .replace(/\r\n[\=]+\r\n/g, '')
+            .replace(/\#show router static-route\s|Static Route Table \(Router\: Base\)  Family\: IPv4/g, '')
+            .replace(/olt\-\w+\-\d+/g, ''));
+    } else {
+        content += statusTemplate('ROUTE STATIQUE', 'KO', 'Données non disponibles.');
+    }
+
+    // MANAGEMENT
+    if (data['ssh'] && data['ssh']['show service id 1090 base']) {
+        const managementStatus = data['ssh']['show service id 1090 base'].match(/CLI Invalid service id/) ? 'KO' : 'OK';
+        content += statusTemplate('MANAGEMENT', managementStatus, data['ssh']['show service id 1090 base']
+            .replace(/\r\n[\=]+\r\n/g, '')
+            .replace(/\#show service id 1090 base\s/, '')
+            .replace(/olt\-\w+\-\d+/g, ''));
+    } else {
+        content += statusTemplate('MANAGEMENT', 'KO', 'Données non disponibles.');
+    }
+
+    // INTERFACES UPLINK (A & B)
+    const uplinkStatus = (uplink, transceiver, port) => (transceiver.match(/Board is not planned|tx-power : not-available|rx-power : not-available|tx-power : \"No Power\"|rx-power : \"No Power\"/) &&
+                                                           port.match(/Admin State\s+: Up/) && 
+                                                           port.match(/Oper State\s+: Up/)) ? 'OK' : 'KO';
+
+    if (data['ssh'] && data['ssh']['show equipment transceiver-inventory nt-a:xfp:1 detail'] && data['ssh']['show port nt-a:xfp:1']) {
+        content += statusTemplate('INTERFACE UPLINK A', uplinkStatus('nt-a', data['ssh']['show equipment transceiver-inventory nt-a:xfp:1 detail'], data['ssh']['show port nt-a:xfp:1']), 
+            data['ssh']['show equipment transceiver-inventory nt-a:xfp:1 detail']
+            .replace(/\r\n[\=]+\r\n/g, '') +
+            '<br>' + data['ssh']['show equipment diagnostics sfp nt-a:xfp:1 detail']
+            .replace(/\r\n[\=]+\r\n/g, '') +
+            '<br>' + data['ssh']['show port nt-a:xfp:1']
+            .replace(/\r\n[\=]+\r\n/g, '')
+        );
+    } else {
+        content += statusTemplate('INTERFACE UPLINK A', 'KO', 'Données non disponibles.');
+    }
+
+    if (data['ssh'] && data['ssh']['show equipment transceiver-inventory nt-b:xfp:1 detail'] && data['ssh']['show port nt-b:xfp:1']) {
+        content += statusTemplate('INTERFACE UPLINK B', uplinkStatus('nt-b', data['ssh']['show equipment transceiver-inventory nt-b:xfp:1 detail'], data['ssh']['show port nt-b:xfp:1']),
+            data['ssh']['show equipment transceiver-inventory nt-b:xfp:1 detail']
+            .replace(/\r\n[\=]+\r\n/g, '') +
+            '<br>' + data['ssh']['show equipment diagnostics sfp nt-b:xfp:1 detail']
+            .replace(/\r\n[\=]+\r\n/g, '') +
+            '<br>' + data['ssh']['show port nt-b:xfp:1']
+            .replace(/\r\n[\=]+\r\n/g, '')
+        );
+    } else {
+        content += statusTemplate('INTERFACE UPLINK B', 'KO', 'Données non disponibles.');
+    }
+
+    rectangleDonnee.innerHTML = content + '</table>';
+    rectangleDonnee.style.display = 'block';
+
+    console.log('fin afficherOLT()');
+}
+
+
+export function afficherPBB(data) {
+    console.log('afficherPBB appelée');
+    console.log('Données reçues pour PBB :', data);
+
+    if (!data || typeof data !== 'object') {
+        return "<p>Erreur : Données invalides</p>";
+    }
+
+    // Fonction pour formater les statuts avec couleurs
+    function formatStatus(status, type = 'general') {
+        if (!status || status === 'N/A') {
+            return `<span class="status-warning">N/A</span>`;
+        }
+        
+        const statusLower = status.toString().toLowerCase();
+        
+        switch (type) {
+            case 'admin':
+            case 'port':
+                if (statusLower === 'up') {
+                    return `<span class="status-up">${status}</span>`;
+                } else if (statusLower === 'down') {
+                    return `<span class="status-down">${status}</span>`;
+                } else {
+                    return `<span class="status-warning">${status}</span>`;
+                }
+                
+            case 'alarm':
+                if (statusLower === 'none' || statusLower === 'aucune') {
+                    return `<span class="alarm-none">${status}</span>`;
+                } else {
+                    return `<span class="alarm-active">${status}</span>`;
+                }
+                
+            default:
+                return `<span>${status}</span>`;
+        }
+    }
+
+    // Fonction pour formater les puissances optiques
+    function formatOpticalPower(powerValue) {
+        if (!powerValue || powerValue === 'N/A') {
+            return `<span class="status-warning">N/A</span>`;
+        }
+
+        // Extraire la valeur numérique
+        const numericPower = parseFloat(powerValue.toString().replace(/[^\d.-]/g, ''));
+        
+        if (isNaN(numericPower)) {
+            return `<span class="status-warning">${powerValue}</span>`;
+        }
+
+        // Logique simplifiée pour les puissances :
+        // < -25 dBm : danger (rouge)
+        // -25 à -15 dBm : warning (orange)  
+        // > -15 dBm : good (vert)
+        if (numericPower < -25) {
+            return `<span class="power-danger">${powerValue}</span>`;
+        } else if (numericPower < -15) {
+            return `<span class="power-warning">${powerValue}</span>`;
+        } else {
+            return `<span class="power-good">${powerValue}</span>`;
+        }
+    }
+
+    let content = `<h2>Informations générales</h2>
+    <table class="table_olt">
+        <tr><td class="table_olt_th">Hostname</td><td>${data.equipment_info?.hostname ?? 'N/A'}</td></tr>
+        <tr><td class="table_olt_th">IP</td><td>${data.equipment_info?.ip_address ?? 'N/A'}</td></tr>
+        <tr><td class="table_olt_th">DNS</td><td>${data.equipment_info?.dns_complet ?? 'N/A'}</td></tr>
+        <tr><td class="table_olt_th">Type</td><td>${data.equipment_info?.type ?? 'N/A'}</td></tr>
+        <tr><td class="table_olt_th">Version</td><td>${data.equipment_info?.Version ?? 'N/A'}</td></tr>
+    </table>`;
+
+    if (data.ports?.length > 0) {
+        content += `<h2>Ports (${data.ports.length})</h2>`;
+
+        data.ports.forEach(port => {
+            content += `<div class="port-box">`;
+            content += `<h4>Port ${port.port}</h4>`;
+            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
+            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
+            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
+            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
+            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
+            content += `<p><strong>Signal RX :</strong> ${formatOpticalPower(port.signal_optique_rx)}</p>`;
+            
+            // Ajouter le seuil RX directement sous la valeur RX
+            if (port.threshold) {
+                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
+            }
+            
+            content += `<p><strong>Signal TX :</strong> ${formatOpticalPower(port.signal_optique_tx)}</p>`;
+            
+            // Ajouter le seuil TX directement sous la valeur TX
+            if (port.threshold) {
+                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
+            }
+            
+            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
+            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
+            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
+            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
+            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
+
+            // Informations SFP/QSFP si disponibles
+            if (port.type_sfp) {
+                content += `<h5>Informations SFP/QSFP</h5>`;
+                content += `<p><strong>PID :</strong> ${port.type_sfp?.PID ?? 'N/A'}</p>`;
+                content += `<p><strong>Type Optique :</strong> ${port.type_sfp?.['Optics type'] ?? 'N/A'}</p>`;
+                content += `<p><strong>Nom :</strong> ${port.type_sfp?.Name ?? 'N/A'}</p>`;
+                content += `<p><strong>Part Number :</strong> ${port.type_sfp?.['Part Number'] ?? 'N/A'}</p>`;
+            }
+            
+            content += `</div>`;
+        });
+    } else {
+        content += `<p class="no-data">Aucun port trouvé</p>`;
+    }
+
+    console.log('fin afficherPBB()');
+    return content;
+}
+
+export function afficherService(data) {
+    console.log('afficherService appelée');
+    console.log('Données reçues pour Service :', data);
+
+    if (!data || typeof data !== 'object') {
+        return "<p>Erreur : Données invalides</p>";
+    }
+
+    // Fonction pour formater les statuts avec couleurs
+    function formatStatus(status, type = 'general') {
+        if (!status || status === 'N/A') {
+            return `<span class="status-warning">N/A</span>`;
+        }
+        
+        const statusLower = status.toString().toLowerCase();
+        
+        switch (type) {
+            case 'admin':
+            case 'port':
+                if (statusLower === 'up') {
+                    return `<span class="status-up">${status}</span>`;
+                } else if (statusLower === 'down') {
+                    return `<span class="status-down">${status}</span>`;
+                } else {
+                    return `<span class="status-warning">${status}</span>`;
+                }
+                
+            case 'alarm':
+                if (statusLower === 'none' || statusLower === 'aucune') {
+                    return `<span class="alarm-none">${status}</span>`;
+                } else {
+                    return `<span class="alarm-active">${status}</span>`;
+                }
+                
+            default:
+                return `<span>${status}</span>`;
+        }
+    }
+
+    // Fonction pour déterminer la classe de couleur des puissances optiques
+    function getPowerColorClass(powerValue, thresholds) {
+        if (!powerValue || !thresholds || powerValue === 'N/A') {
+            return 'status-warning';
+        }
+
+        // Extraire la valeur numérique de la puissance (enlever "dBm")
+        const numericPower = parseFloat(powerValue.toString().replace(/[^\d.-]/g, ''));
+        
+        if (isNaN(numericPower)) {
+            return 'status-warning';
+        }
+
+        const rxHigh = parseFloat(thresholds.rx_high || 0);
+        const rxLow = parseFloat(thresholds.rx_low || 0);
+        const txHigh = parseFloat(thresholds.tx_high || 0);
+        const txLow = parseFloat(thresholds.tx_low || 0);
+
+        // Déterminer les seuils selon que c'est RX ou TX
+        let highThreshold, lowThreshold;
+        if (powerValue.toString().includes('rx') || arguments[2] === 'rx') {
+            highThreshold = rxHigh;
+            lowThreshold = rxLow;
+        } else {
+            highThreshold = txHigh;
+            lowThreshold = txLow;
+        }
+
+        // Logique des couleurs :
+        // Rouge : dépasse les limites
+        if (numericPower > highThreshold || numericPower < lowThreshold) {
+            return 'power-danger';
+        }
+        
+        // Orange : à 2dB des limites
+        if ((numericPower > (highThreshold - 2)) || (numericPower < (lowThreshold + 2))) {
+            return 'power-warning';
+        }
+        
+        // Vert : dans la plage normale
+        return 'power-good';
+    }
+
+    // Fonction pour formater une puissance avec couleur
+    function formatPowerWithColor(powerValue, thresholds, type = '') {
+        const colorClass = getPowerColorClass(powerValue, thresholds);
+        const displayValue = powerValue ?? 'N/A';
+        return `<span class="${colorClass}">${displayValue}</span>`;
+    }
+
+    // Vérifier si les données sont dans le format "service" (avec equipments) ou "equipment" (avec equipment_info)
+    if (data.equipments && Array.isArray(data.equipments)) {
+        // Format service avec plusieurs équipements
+        let content = `<h2>Informations du service</h2>`;
+        
+        content += `<p><strong>Service ID :</strong> ${data.service_id ?? 'N/A'}</p>`;
+        content += `<p><strong>Statut :</strong> ${formatStatus(data.success ? 'Succès' : 'Échec')}</p>`;
+        content += `<p><strong>Nombre d'équipements :</strong> ${data.equipment_count ?? 'N/A'}</p>`;
+
+        // Affichage des équipements
+        if (data.equipments.length > 0) {
+            content += `<h2>Équipements (${data.equipments.length})</h2>`;
+            
+            data.equipments.forEach((equipment, index) => {
+                const script = equipment.resultat_script;
+                
+                content += `<h3>Équipement ${index + 1}: ${equipment.hostname}</h3>`;
+                content += `<p><strong>Hostname :</strong> ${equipment.hostname}</p>`;
+                content += `<p><strong>Port :</strong> ${equipment.port ?? 'N/A'}</p>`;
+                
+                if (script && !script.error) {
+                    content += `<p><strong>IP :</strong> ${script.ip_address ?? 'N/A'}</p>`;
+                    content += `<p><strong>DNS :</strong> ${script.dns_complet ?? 'N/A'}</p>`;
+                    content += `<p><strong>Type :</strong> ${script.type ?? 'N/A'}</p>`;
+                    content += `<p><strong>Version :</strong> ${script.Version ?? 'N/A'}</p>`;
+
+                    // Affichage des ports si disponibles
+                    if (script.ports && script.ports.length > 0) {
+                        content += `<h4>Ports détaillés</h4>`;
+
+                        script.ports.forEach(port => {
+                            // Formater les puissances avec couleurs
+                            const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
+                            const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
+                            
+                            content += `<div class="port-box">`;
+                            content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
+                            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
+                            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
+                            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
+                            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
+                            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
+                            content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
+                            
+                            // Ajouter le seuil RX directement sous la valeur RX
+                            if (port.threshold) {
+                                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
+                            }
+                            
+                            content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
+                            
+                            // Ajouter le seuil TX directement sous la valeur TX
+                            if (port.threshold) {
+                                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
+                            }
+                            
+                            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
+                            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
+                            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
+                            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
+                            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
+                            
+                            // Ajouter les informations SFP
+                            if (port.type_sfp) {
+                                content += `<h5>Informations SFP/QSFP</h5>`;
+                                content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
+                                content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
+                                content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
+                                content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
+                            }
+                            
+                            content += `</div>`;
+                        });
+                    } else {
+                        content += `<p class="no-data">Aucun port détaillé trouvé pour cet équipement.</p>`;
+                    }
+                } else if (script && script.error) {
+                    content += `<p><strong>Statut :</strong> ${formatStatus('Erreur', 'general')}</p>`;
+                    content += `<p><strong>Type :</strong> ${script.type ?? 'N/A'}</p>`;
+                    content += `<div style="background-color: #ffe6e6; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <strong>Erreur:</strong> ${script.error}
+                    </div>`;
+                } else {
+                    content += `<p><strong>Statut :</strong> Données non disponibles</p>`;
+                }
+                
+                // Séparateur entre équipements
+                if (index < data.equipments.length - 1) {
+                    content += `<hr style="margin: 20px 0; border: 1px solid #ddd;">`;
+                }
+            });
+        } else {
+            content += `<p class="no-data">Aucun équipement trouvé</p>`;
+        }
+
+        return content;
+    } else {
+        // Format equipment simple avec equipment_info
+        const equipInfo = data.equipment_info || {};
+        
+        let content = `<h2>Informations du service/équipement</h2>`;
+        content += `<p><strong>Hostname :</strong> ${equipInfo.hostname ?? 'N/A'}</p>`;
+        content += `<p><strong>IP :</strong> ${equipInfo.ip_address ?? 'N/A'}</p>`;
+        content += `<p><strong>DNS :</strong> ${equipInfo.dns_complet ?? 'N/A'}</p>`;
+        content += `<p><strong>Type :</strong> ${equipInfo.type ?? 'N/A'}</p>`;
+        content += `<p><strong>Version :</strong> ${equipInfo.Version ?? 'N/A'}</p>`;
+
+        // Vérifier si les données semblent être des erreurs de résolution DNS
+        if (equipInfo.ip_address === "DNS non résolu" || equipInfo.dns_complet === "DNS non résolu") {
+            content += `<div class="dns-error">
+                <strong>Attention :</strong> Les informations DNS ne peuvent pas être résolues. 
+                Cela peut indiquer un problème de connectivité ou que l'équipement n'est pas accessible.
+            </div>`;
+        }
+
+        if (data.ports && data.ports.length > 0) {
+            content += `<h2>Ports (${data.ports.length})</h2>`;
+
+            data.ports.forEach(port => {
+                // Formater les puissances avec couleurs
+                const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
+                const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
+                
+                content += `<div class="port-box">`;
+                content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
+                content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
+                content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
+                content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
+                content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
+                content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
+                content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
+                
+                // Seuil en dessous de la valeur RX
+                if (port.threshold) {
+                    content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
+                }
+                
+                content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
+                
+                // Seuils en dessous de la valeur TX
+                if (port.threshold) {
+                    content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
+                }
+                
+                content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
+                content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
+                content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
+                content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
+                content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
+                
+                // Ajouter les informations SFP
+                if (port.type_sfp) {
+                    content += `<h4>Informations SFP/QSFP</h4>`;
+                    content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
+                    content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
+                    content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
+                    content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
+                }
+                
+                content += `</div>`;
+            });
+        } else {
+            content += `<div class="no-data">
+                <p><strong>Aucun port trouvé</strong></p>
+                <p>Cela peut être normal pour certains types de services ou indiquer que les données ne sont pas encore disponibles.</p>
+            </div>`;
+        }
+
+        return content;
+    }
+}
+
+
+
+export function afficherServiceWDM(dataToDisplay) {
+    const equipementData = dataToDisplay.find(item => item["Nom equipement"]);
+    const cartesData = dataToDisplay.filter(item => item["Type de carte"]);
+
+    // Génère le tableau d'informations de l'équipement
+    const equipementTable = `
+        <h2>Informations sur l'équipement</h2>
+        <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th>Nom Équipement</th>
+                    <th>Adresse IP</th>
+                    <th>DNS</th>
+                    <th>Version</th>
+                    <th>Statut</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>${equipementData["Nom equipement"]}</td>
+                    <td>${equipementData["Adresse IP"]}</td>
+                    <td>${equipementData["DNS"]}</td>
+                    <td>${equipementData["Version"]}</td>
+                    <td>Actif</td>
+                </tr>
+            </tbody>
+        </table>`;
+
+    // Génère le tableau d'informations des cartes avec la flèche pour "32EC2"
+    const cartesTable = `
+        <h2>Informations sur les cartes</h2>
+        <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th>Type de Carte</th>
+                    <th>Châssis</th>
+                    <th>Slot</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${cartesData.map((carte, index) => `
+                    <tr class="carte-row" onclick="toggleDetails(${index})" style="cursor: pointer;">
+                        <td>
+                            ${carte["Type de carte"] === "32EC2" ? `<span class="chevron" id="chevron-${index}">▶</span>` : ""}
+                            ${carte["Type de carte"]}
+                        </td>
+                        <td>${carte["Shelf"] || carte["Chassis"] || "Non spécifié"}</td>
+                        <td>${carte["Slot"]}</td>
+                    </tr>
+                    ${carte["Type de carte"] === "32EC2" ? `
+                        <tr id="details-${index}" class="details-row" style="display:none;">
+                            <td colspan="3">
+                                <div>
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Température</th>
+                                                <th>Mesure de courant</th>
+                                                <th>Puissance mesurée</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>${carte["Temperature"] || "N/A"}</td>
+                                                <td>${carte["Measured Current"] || "N/A"}</td>
+                                                <td>${carte["Measured Power"] || "N/A"}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    ` : ''}`
+                ).join('')}
+            </tbody>
+        </table>`;
+
+    return `${equipementTable}${cartesTable}`;
+}
+
+window.toggleDetails = function(index) {
+    const detailsRow = document.getElementById(`details-${index}`);
+    const chevron = document.getElementById(`chevron-${index}`);
+    
+    if (detailsRow && chevron) {
+        if (detailsRow.style.display === "none") {
+            detailsRow.style.display = "table-row";
+            
+            setTimeout(() => {
+                chevron.classList.add("down");
+            }, 100);
+        } else {
+            detailsRow.style.display = "none";
+            chevron.classList.remove("down");
+        }
+    }
+}
+
+
+export function afficherInfoDNS(dns){
+    console.log("Information DNS pour :", dns);
+}
+
+export function searchEquipement(idService, typeCarte, slot)
+{
+    console.log('Recherche d\'équipement pour :', idService, typeCarte, slot);
+}
+
+export function toggleContent(event){
+    var conent = event.target.parentElement.nextElementSibling;
+    if (content.classList.contains('hidden-content')){
+        content.classList.remove('hidden-content');
+        content.classList.add('visible-content');
+        event.target.classList.remove('fa-chevron-down');
+        event.target.classList.add('fa-chevron-up');
+    } 
+    else 
+    {
+        content.classList.remove('visible-content');
+        content.classList.add('hidden-content');
+        event.target.classList.remove('fa-chevron-up');
+        event.target.classList.add('fa-chevron-down');
+    }
+}
+
+export function showLoadingIcon()
+{
+    $('.btn-verification').html('<div id="loading-icon"><i class="fas fa-spinner fa-spin"></i></div>').attr('disabled', true);
+}
+
+export function hideLoadingIcon()
+{
+    $('.btn-verification').html('<b>Vérification</b>').attr('disabled', false);
+}
+export function resetContainers()
+{
+    var dnsResultatDiv = document.getElementById('dns-resultat');
+    var emuxResultatDiv = document.getElementById('emux-container');
+    
+    if (dnsResultatDiv)
+    {
+        dnsResultatDiv.innerHTML = '';
+    }
+
+    if (emuxResultatDiv) 
+    {
+        emuxResultatDiv.innerHTML = '';
+    }
+}
+
+export function afficherResultatDNS(data){
+    const dnsContainer = document.getElementById('dns-container');
+    const dnsResultatDiv = document.getElementById('dns-resultat');
+    const emuxResultatDiv = document.getElementById('emux-container');
+
+    dnsResultatDiv.innerHTML = '';
+    emuxResultatDiv.innerHTML = '';
+
+    const {DNS:dns,"Adresse IP":ip,Version:version} = data[0];
+    const dnsElement = creerParagraphe(`DNS :${dns}`,ajouterBoutonInfo());
+    const ipElement = creerParagraphe(`IP : ${ip}`);
+    const versionElement = creerVersionElement(version);
+
+    dnsResultatDiv.append(dnsElement, creerInfoText(), ipElement, versionElement, document.createElement('br'));
+
+    data.slice(1).forEach(equipement =>{
+        dnsResultatDiv.appendChild(creerEquipementInfo(equipement));
+    });
+
+    dnsContainer.style.display = 'block';
+}
+
+function creerParagraphe(texte,childElement){
+    const p = document.createElement('p');
+    p.textContent = texte;
+
+    if (childElement) p.appendChild(childElement);
+    return p;
+}
+
+function ajouterBoutonInfo(){
+    const infoButton = document.createElement('button');
+    infoButton.classList.add('btn-info');
+    infoButton.innerHTML = `<i class="fas fa-info-circle"></i>`;
+    infoButton.onmouseenter = () => afficherInfoTexte(infoButton);
+    return infoButton;
+}
+
+function creerVersionElement(version){
+    const versionElement = creerParagraphe(`Version : ${version}`);
+    const iconClass = version?.match(/6\.4\.802/) ? 'fa-check-circle' : 'fa-times-circle';
+    const iconColor = version?.match(/6\.4\.802/) ? '' : '#ff0000';
+    
+    versionElement.classList.add(version?.match(/6\.4\.802/) ? 'version-special' : 'version-special-red');
+    versionElement.innerHTML += `<i class="fas ${iconClass} icon-special" style="color: ${iconColor};"></i>`;
+    
+    return versionElement;
+}
+
+function creerInfoText() {
+    const infoText = document.createElement('div');
+    infoText.classList.add('info-text');
+    infoText.innerHTML = `
+        <p>Toutes les informations ne sont pas affichées.</p>
+        <p>Souhaitez-vous tout afficher ? *Attention, ça peut prendre (beaucoup) de temps</p>
+        <button class="btn-oui" onclick="chargerPlusInfo()">Oui</button>
+        <p>Il est possible d'afficher à l'aide des loupes à côté de chaque nom de carte</p>
+    `;
+    return infoText;
+}
+
+function creerEquipementInfo(equipement) {
+    const { "Type de carte": typeCarte, Slot: slot } = equipement;
+    const equipementInfo = document.createElement('div');
+    equipementInfo.classList.add('equipement-info');
+
+    const typeCarteElement = creerParagraphe(`Type de carte : ${typeCarte}`, creerBoutonRecherche(typeCarte, slot));
+    const slotElement = creerParagraphe(`Slot : ${slot}`);
+
+    equipementInfo.append(typeCarteElement, slotElement, document.createElement('hr').classList.add('separator'));
+    
+    return equipementInfo;
+}
+
+function creerBoutonRecherche(typeCarte, slot) {
+    const buttonElement = document.createElement('button');
+    buttonElement.classList.add('btn-magnifying-glass');
+    buttonElement.onclick = () => searchEquipement(typeCarte, slot, chassis);
+    buttonElement.innerHTML = `<i class="fas fa-magnifying-glass"></i>`;
+    return buttonElement;
+}
+
+export function afficherInfoTexte(infoText)
+{
+    var infoTextElement = document.querySelector('.info-text');
+    infoTextElement.style.display = 'block';
+
+    // Ã‰vÃ©nement pour garder le bloc d'information affichÃ© si survolÃ©
+    infoTextElement.addEventListener('mouseenter', function()
+    {
+        infoTextElement.style.display = 'block';
+    });
+
+    // Ã‰vÃ©nement pour masquer le bloc d'information lorsque non survolÃ©
+    infoTextElement.addEventListener('mouseleave', function() 
+    {
+        infoTextElement.style.display = 'none';
+    });
+}
+
+export function afficherDetailsEMUX(data)
+{
+    var dnsContainer = document.gerElementByID('dns-container');
+    var emuxResultatDiv = document.getElementById('emux-container');
+    var dnsResultatDiv = document.getElementById('dns-resultat');
+    dnsResultatDiv.innerHTML = '';
+    emuxResultatDiv.innerHTML = '';
+
+    var dnsElement = document.createElement('p');
+    dnsElement.textContent = 'DNS : '+dns;
+    var ipElement = document.createElement('p');
+    ipElement.textContent = 'IP : '+ip;
+
+    var versionElement = document.createElement('p');
+    versionElement.textContent = 'Version : '+version;
+    if(version != undefined && version.match(/6\.4\.802/)){
+        versionElement.classList.add('version-special');
+        var iconElement = document.createElement('i');
+        iconElement.classList.add('fas', 'fa-check-circle','icon-special');
+        versionElement.appendChild(iconElement);
+    }else{
+        versionElement.classList.add('version-special-red');
+        var iconElement = document.createElement('i');
+        iconElement.classList.add('fas', 'fa-times-circle', 'icon-special-red');
+        versionElement.appendChild(iconElement);
+    }
+    emuxResultatDiv.appendChild(dnsElement);
+    emuxResultatDiv.appendChild(ipElement);
+    emuxResultatDiv.appendChild(versionElement);
+
+    data.slice(1).forEach(function (equipement)
+    {
+        var separator = document.createElement('hr');
+        separator.classList.add('separator');
+        emuxResultatDiv.appendChild(separator);
+        var typeCarte = equipement['Type de carte'];  
+        var slot = equipement['Slot'];
+
+        var typeCarteElement = document.createElement('p');
+        typeCarteElement.textContent = 'Type de carte : ' + typeCarte;
+        typeCarteElement.classList.add('type-carte-label'); 
+        emuxResultatDiv.appendChild(typeCarteElement);
+        typeCarteElement.classList.add('port-hover');
+        var slotElement = document.createElement('p');
+        slotElement.textContent = 'Slot : ' + slot;
+
+        emuxResultatDiv.appendChild(slotElement);
+
+        switch(true){
+            case typeCarte.includes("EMUX"):
+                MappingEMUX["EMUX"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("FRS02"):
+                MappingEMUX["FRS02"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("C1008MPLH"):
+                MappingEMUX["C1008MPLH"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("C1008GE"):
+                MappingEMUX["C1008GE"](equipement , emuxResultatDiv);
+                break;
+            case typeCarte.includes("PM_06006"):
+                MappingEMUX["PM_06006"](equipement , emuxResultatDiv);
+                break;
+            case typeCarte.includes("OAIL-HCS"):
+                MappingEMUX["OAIL-HCS"](equipement , emuxResultatDiv);
+                break;
+            case typeCarte.includes("1001RR"):
+                MappingEMUX["1001RR"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("C1001HC"):
+                MappingEMUX["C1001HC"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("PM404"):
+                MappingEMUX["PM404"](equipement, emuxResultatDiv);
+                break;
+            case typeCarte.includes("PMOAB-E") || typeCarte.includes("PMOABP-E")||typeCarte.includes("PMOABPLC-12/23"):
+                MappingEMUX["PMOAB"](equipement,emuxResultatDiv);
+                break;
+            case typeCarte.includes("ROADM"):
+                MappingEMUX["ROADM"](equipement,emuxResultatDiv);
+                break;
+            case typeCarte.includes("OTDR"):
+                MappingEMUX["OTDR"](equipement,emuxResultatDiv);
+                break;
+            case typeCarte.includes("OABP-HCS"):
+                MappingEMUX["OABP-HCS"](equipement,emuxResultatDiv);
+                break;
+            default:
+                console.log("Type de carte non pris en charge");
+        }
+        dnsContainer.style.display = 'block';
+
+    }); 
+
+}

@@ -1,0 +1,33 @@
+valid_mes/
+│
+├── js_equipement/
+│   │
+│   ├── AffichageEquipment.js
+│   ├── equipment.js
+│   ├── mappingEMUX.js
+│   └── valid_mes_wdm.js
+│
+├── js_service/
+│   │
+│   ├── Affichage_service/
+│   │   ├── afficherCOR.js
+│   │   ├── afficherEDG.js
+│   │   ├── afficherFTTH.js
+│   │   ├── afficherNTE.js
+│   │   ├── afficherOAM.js
+│   │   ├── afficherOLT.js
+│   │   ├── afficherOLT5800.js
+│   │   ├── afficherSWA.js
+│   │   └── afficherVPLS.js
+│   │
+│   ├── Affichage_service.js
+│   ├── Modif_Nego.js
+│   └── service.js
+│
+├── valid_mes.html
+│
+├── valid_mes.css
+│
+└── valid_mes.js
+
+Sans module externe à installer( j ai utilsé Live server sur vs code pour avoir un serveur local et que ça mette à jour en temps réel et d autre details )
