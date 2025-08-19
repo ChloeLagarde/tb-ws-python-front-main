@@ -520,14 +520,14 @@ label {
   color: #333;
 }
 
-/* Animation pour la rotation du chevron lorsqu’on ouvre/ferme */
+/* Animation pour la rotation du chevron lorsqu'on ouvre/ferme */
 .details-row[style*="display: table-row"] + tr .chevron,
 .chevron.open {
   transform: rotate(90deg);
   color: #1a73e8;
 }
 
-/* Ajout d’une bordure et ombre légère pour le tableau */
+/* Ajout d'une bordure et ombre légère pour le tableau */
 table.carte {
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -862,6 +862,34 @@ hr {
 
 .alarm-active {
     background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+/* Classes pour les versions logicielles */
+.version-up-to-date {
+    background-color: #5cb85c !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.version-outdated {
+    background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.version-unknown {
+    background-color: #f0ad4e !important;
     color: white !important;
     padding: 4px 8px !important;
     border-radius: 4px !important;

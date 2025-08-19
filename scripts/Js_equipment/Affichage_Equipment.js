@@ -132,6 +132,150 @@ export function afficherOLT(data) {
     console.log('fin afficherOLT()');
 }
 
+// Base de données locale des versions (fallback si CORS échoue)
+const localVersionDatabase = {
+    "Cisco 8201-32FH": "7.5.3",
+    "Cisco C9300": "17.12.04",
+    "Cisco C9400": "17.12.04", 
+    "Nokia 7750": "22.10.R2",
+    "Nokia 7360": "6.4.802",
+    "Juniper ERX": "8.2.4p0-16",
+    "Juniper E120": "8.2.4p0-16",
+    // Ajoutez d'autres équipements ici au fur et à mesure
+};
+
+// Fonction pour vérifier et formater le statut de version
+async function formatVersionStatus(equipmentType, currentVersion) {
+    if (!equipmentType || !currentVersion || equipmentType === 'N/A' || currentVersion === 'N/A') {
+        return `<span class="version-unknown">${currentVersion || 'N/A'}</span>`;
+    }
+
+    // D'abord essayer la base locale
+    if (localVersionDatabase[equipmentType]) {
+        const localLatestVersion = localVersionDatabase[equipmentType];
+        const isUpToDate = compareVersions(currentVersion, localLatestVersion);
+        
+        if (isUpToDate) {
+            return `<span class="version-up-to-date">${currentVersion}</span>`;
+        } else {
+            return `<span class="version-outdated">${currentVersion} (dernière: ${localLatestVersion})</span>`;
+        }
+    }
+
+    // Ensuite essayer le wiki avec la même méthode que Service.py
+    try {
+        const wikiUrl = 'https://wiki.int.axione.fr/index.php/SOFT';
+        
+        // Headers similaires à Service.py
+        const headers = {
+            'Referer': 'https://wiki.int.axione.fr',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        };
+
+        const response = await fetch(wikiUrl, {
+            method: 'GET',
+            headers: headers,
+            mode: 'cors',
+            credentials: 'include',
+            cache: 'no-cache'
+        });
+
+        if (!response.ok) {
+            return `<span class="version-unknown">${currentVersion}</span>`;
+        }
+
+        const htmlText = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        const tables = doc.querySelectorAll('table');
+        
+        for (let tableIndex = 0; tableIndex < tables.length; tableIndex++) {
+            const table = tables[tableIndex];
+            const rows = table.querySelectorAll('tr');
+            
+            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                const row = rows[rowIndex];
+                const cells = row.querySelectorAll('td, th');
+                
+                if (cells.length >= 3) {
+                    const typeCell = cells[0]?.textContent?.trim();
+                    
+                    if (typeCell && typeCell.length > 0) {
+                        // Vérifier si le type d'équipement correspond (recherche partielle et exacte)
+                        if (typeCell.includes(equipmentType) || 
+                            typeCell.toLowerCase().includes(equipmentType.toLowerCase()) ||
+                            equipmentType.includes(typeCell)) {
+                            
+                            // Chercher la colonne "Dernière Version logicielle validée"
+                            let versionCell = cells[2]?.textContent?.trim();
+                            
+                            // Si pas de version en colonne 3, essayer colonne 4 ou 5
+                            if (!versionCell || versionCell === '' || versionCell === 'N/A') {
+                                versionCell = cells[3]?.textContent?.trim() || cells[4]?.textContent?.trim();
+                            }
+                            
+                            if (versionCell && versionCell !== '' && versionCell !== 'N/A') {
+                                // Comparer les versions
+                                const isUpToDate = compareVersions(currentVersion, versionCell);
+                                
+                                if (isUpToDate) {
+                                    return `<span class="version-up-to-date">${currentVersion}</span>`;
+                                } else {
+                                    return `<span class="version-outdated">${currentVersion} (dernière: ${versionCell})</span>`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return `<span class="version-unknown">${currentVersion}</span>`;
+        
+    } catch (error) {
+        return `<span class="version-unknown">${currentVersion}</span>`;
+    }
+}
+
+// Fonction utilitaire pour comparer les versions
+function compareVersions(current, latest) {
+    if (!current || !latest) return false;
+    
+    // Nettoyer les versions (enlever les espaces et caractères indésirables)
+    const cleanCurrent = current.toString().trim();
+    const cleanLatest = latest.toString().trim();
+    
+    // Comparaison exacte d'abord
+    if (cleanCurrent === cleanLatest) return true;
+    
+    // Extraire les numéros de version (ex: "7.5.3" -> [7, 5, 3])
+    const currentParts = cleanCurrent.split('.').map(part => {
+        const num = parseInt(part.replace(/[^\d]/g, ''));
+        return isNaN(num) ? 0 : num;
+    });
+    
+    const latestParts = cleanLatest.split('.').map(part => {
+        const num = parseInt(part.replace(/[^\d]/g, ''));
+        return isNaN(num) ? 0 : num;
+    });
+    
+    // Comparer chaque partie de version
+    const maxLength = Math.max(currentParts.length, latestParts.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+        const currentPart = currentParts[i] || 0;
+        const latestPart = latestParts[i] || 0;
+        
+        if (currentPart < latestPart) return false; // Version obsolète
+        if (currentPart > latestPart) return true;  // Version plus récente
+    }
+    
+    return true; // Versions identiques
+}
 
 export function afficherPBB(data) {
     console.log('afficherPBB appelée');
@@ -204,8 +348,20 @@ export function afficherPBB(data) {
         <tr><td class="table_olt_th">IP</td><td>${data.equipment_info?.ip_address ?? 'N/A'}</td></tr>
         <tr><td class="table_olt_th">DNS</td><td>${data.equipment_info?.dns_complet ?? 'N/A'}</td></tr>
         <tr><td class="table_olt_th">Type</td><td>${data.equipment_info?.type ?? 'N/A'}</td></tr>
-        <tr><td class="table_olt_th">Version</td><td>${data.equipment_info?.Version ?? 'N/A'}</td></tr>
+        <tr><td class="table_olt_th">Version</td><td id="version-cell-pbb">${data.equipment_info?.Version ?? 'N/A'}</td></tr>
     </table>`;
+
+    // Vérification asynchrone de la version après affichage initial
+    if (data.equipment_info?.type && data.equipment_info?.Version) {
+        setTimeout(() => {
+            formatVersionStatus(data.equipment_info.type, data.equipment_info.Version).then(formattedVersion => {
+                const versionCell = document.getElementById('version-cell-pbb');
+                if (versionCell) {
+                    versionCell.innerHTML = formattedVersion;
+                }
+            });
+        }, 100);
+    }
 
     if (data.ports?.length > 0) {
         content += `<h2>Ports (${data.ports.length})</h2>`;
@@ -370,7 +526,19 @@ export function afficherService(data) {
                     content += `<p><strong>IP :</strong> ${script.ip_address ?? 'N/A'}</p>`;
                     content += `<p><strong>DNS :</strong> ${script.dns_complet ?? 'N/A'}</p>`;
                     content += `<p><strong>Type :</strong> ${script.type ?? 'N/A'}</p>`;
-                    content += `<p><strong>Version :</strong> ${script.Version ?? 'N/A'}</p>`;
+                    content += `<p><strong>Version :</strong> <span id="version-cell-service-${index}">${script.Version ?? 'N/A'}</span></p>`;
+
+                    // Vérification asynchrone de la version
+                    if (script.type && script.Version) {
+                        setTimeout(() => {
+                            formatVersionStatus(script.type, script.Version).then(formattedVersion => {
+                                const versionCell = document.getElementById(`version-cell-service-${index}`);
+                                if (versionCell) {
+                                    versionCell.innerHTML = formattedVersion;
+                                }
+                            });
+                        }, 100 + (index * 10)); // Délai échelonné pour éviter les conflits
+                    }
 
                     // Affichage des ports si disponibles
                     if (script.ports && script.ports.length > 0) {
@@ -451,7 +619,19 @@ export function afficherService(data) {
         content += `<p><strong>IP :</strong> ${equipInfo.ip_address ?? 'N/A'}</p>`;
         content += `<p><strong>DNS :</strong> ${equipInfo.dns_complet ?? 'N/A'}</p>`;
         content += `<p><strong>Type :</strong> ${equipInfo.type ?? 'N/A'}</p>`;
-        content += `<p><strong>Version :</strong> ${equipInfo.Version ?? 'N/A'}</p>`;
+        content += `<p><strong>Version :</strong> <span id="version-cell-simple">${equipInfo.Version ?? 'N/A'}</span></p>`;
+
+        // Vérification asynchrone de la version
+        if (equipInfo.type && equipInfo.Version) {
+            setTimeout(() => {
+                formatVersionStatus(equipInfo.type, equipInfo.Version).then(formattedVersion => {
+                    const versionCell = document.getElementById('version-cell-simple');
+                    if (versionCell) {
+                        versionCell.innerHTML = formattedVersion;
+                    }
+                });
+            }, 100); // Délai pour que le DOM soit mis à jour
+        }
 
         // Vérifier si les données semblent être des erreurs de résolution DNS
         if (equipInfo.ip_address === "DNS non résolu" || equipInfo.dns_complet === "DNS non résolu") {
@@ -758,13 +938,13 @@ export function afficherInfoTexte(infoText)
     var infoTextElement = document.querySelector('.info-text');
     infoTextElement.style.display = 'block';
 
-    // Ã‰vÃ©nement pour garder le bloc d'information affichÃ© si survolÃ©
+    // Événement pour garder le bloc d'information affiché si survolé
     infoTextElement.addEventListener('mouseenter', function()
     {
         infoTextElement.style.display = 'block';
     });
 
-    // Ã‰vÃ©nement pour masquer le bloc d'information lorsque non survolÃ©
+    // Événement pour masquer le bloc d'information lorsque non survolé
     infoTextElement.addEventListener('mouseleave', function() 
     {
         infoTextElement.style.display = 'none';
