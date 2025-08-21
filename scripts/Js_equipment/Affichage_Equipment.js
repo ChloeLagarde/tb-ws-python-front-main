@@ -1,5 +1,461 @@
 import MappingEMUX from './mappingEMUX.js';
 
+// ========================================================================
+// FONCTIONS UTILITAIRES POUR JQUERY UI ACCORDION
+// ========================================================================
+
+// Fonction utilitaire pour créer un indicateur de statut
+function createStatusIndicator(status) {
+    const statusClass = status === 'up' || status === 'OK' ? 'status-up' : 
+                      status === 'down' || status === 'KO' ? 'status-down' : 'status-warning';
+    return `<span class="status-indicator ${statusClass}"></span>`;
+}
+
+// Fonction utilitaire pour créer un badge de statut
+function createStatusBadge(status, text = null) {
+    const displayText = text || status;
+    const badgeClass = status === 'up' || status === 'OK' ? 'badge-up' : 
+                     status === 'down' || status === 'KO' ? 'badge-down' : 'badge-warning';
+    return `<span class="status-badge ${badgeClass}">${displayText.toUpperCase()}</span>`;
+}
+
+// Fonction pour initialiser les accordéons jQuery UI
+function initializeAccordions() {
+    // Accordéon principal pour les équipements
+    $(".equipment-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 300,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-circle-arrow-e",
+            activeHeader: "ui-icon-circle-arrow-s"
+        }
+    });
+
+    // Accordéon pour les ports
+    $(".ports-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 200,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-triangle-1-e",
+            activeHeader: "ui-icon-triangle-1-s"
+        }
+    });
+
+    // Accordéon pour les LAG et entités mères
+    $(".lag-accordion, .entity-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 250,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-plus",
+            activeHeader: "ui-icon-minus"
+        }
+    });
+}
+
+// Fonction pour formater les puissances optiques avec couleur dans les accordéons
+function formatOpticalPowerAccordion(power) {
+    if (!power || power === 'N/A') {
+        return `<span class="status-badge badge-warning">N/A</span>`;
+    }
+    
+    const numericPower = parseFloat(power.toString().replace(/[^\d.-]/g, ''));
+    if (isNaN(numericPower)) {
+        return `<span class="status-badge badge-warning">${power}</span>`;
+    }
+    
+    let badgeClass = '';
+    if (numericPower > -15) badgeClass = 'badge-up';
+    else if (numericPower > -25) badgeClass = 'badge-warning';
+    else badgeClass = 'badge-down';
+    
+    return `<span class="status-badge ${badgeClass}">${power}</span>`;
+}
+
+// ========================================================================
+// FONCTIONS D'AFFICHAGE AVEC ACCORDÉONS
+// ========================================================================
+
+// Fonction utilitaire pour générer les détails d'un port
+function generatePortDetailsHTML(port) {
+    return `
+        <div class="port-card">
+            <div class="port-header">
+                <span class="port-name">Port ${port.port}</span>
+                <span class="status-badge badge-info">${port.bandwidth || 'N/A'}</span>
+            </div>
+            <div class="port-details">
+                <div class="detail-item">
+                    <span class="detail-label">Statut:</span>
+                    <span class="detail-value">${createStatusIndicator(port.status)}${port.status || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Admin:</span>
+                    <span class="detail-value">${createStatusIndicator(port.admin_status)}${port.admin_status || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">MAC:</span>
+                    <span class="detail-value">${port.physical_address || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Description:</span>
+                    <span class="detail-value">${port.description || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Signal RX:</span>
+                    <span class="detail-value">${formatOpticalPowerAccordion(port.signal_optique_rx)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Signal TX:</span>
+                    <span class="detail-value">${formatOpticalPowerAccordion(port.signal_optique_tx)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">FEC:</span>
+                    <span class="detail-value">${port.fec_state || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Longueur d'onde:</span>
+                    <span class="detail-value">${port.wavelength || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Alarmes:</span>
+                    <span class="detail-value">${createStatusBadge(port.alarm_status === 'none' ? 'up' : 'down', port.alarm_status || 'N/A')}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">État LED:</span>
+                    <span class="detail-value">${port.led_state || 'N/A'}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">État Laser:</span>
+                    <span class="detail-value">${port.laser_state || 'N/A'}</span>
+                </div>
+            </div>
+            ${port.type_sfp ? `
+                <div class="sfp-info">
+                    <strong><i class="fas fa-microchip"></i> Informations SFP/QSFP:</strong>
+                    <div class="port-details" style="margin-top: 8px;">
+                        <div class="detail-item">
+                            <span class="detail-label">PID:</span>
+                            <span class="detail-value">${port.type_sfp.PID || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Type Optique:</span>
+                            <span class="detail-value">${port.type_sfp['Optics type'] || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Nom:</span>
+                            <span class="detail-value">${port.type_sfp.Name || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Part Number:</span>
+                            <span class="detail-value">${port.type_sfp['Part Number'] || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+            ${port.threshold ? `
+                <div class="sfp-info">
+                    <strong><i class="fas fa-chart-line"></i> Seuils optiques:</strong>
+                    <div class="port-details" style="margin-top: 8px;">
+                        <div class="detail-item">
+                            <span class="detail-label">Seuil RX:</span>
+                            <span class="detail-value">${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Seuil TX:</span>
+                            <span class="detail-value">${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</span>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Fonction améliorée pour afficher PBB avec accordéons
+function afficherPBBWithAccordion(data) {
+    console.log('afficherPBBWithAccordion appelée');
+    
+    if (!data || typeof data !== 'object') {
+        return "<p>Erreur : Données invalides</p>";
+    }
+
+    const equipInfo = data.equipment_info || {};
+    const ports = data.ports || [];
+    
+    // Compter les statuts des ports
+    const portsUp = ports.filter(p => p.status === 'up').length;
+    const portsDown = ports.filter(p => p.status === 'down').length;
+    const portsTotal = ports.length;
+
+    let content = `
+        <div class="equipment-accordion">
+            <h3>
+                <i class="fas fa-server"></i>
+                Informations générales - ${equipInfo.hostname || 'N/A'}
+                ${createStatusBadge('up', 'ACTIF')}
+            </h3>
+            <div>
+                <table class="accordion-table">
+                    <tr>
+                        <th>Hostname</th>
+                        <td>${equipInfo.hostname || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Adresse IP</th>
+                        <td>${equipInfo.ip_address || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>DNS Complet</th>
+                        <td>${equipInfo.dns_complet || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Type d'équipement</th>
+                        <td>${equipInfo.type || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Version logicielle</th>
+                        <td id="version-cell-pbb-accordion">${equipInfo.Version || 'N/A'}</td>
+                    </tr>
+                </table>
+            </div>
+    `;
+
+    if (portsTotal > 0) {
+        content += `
+            <h3>
+                <i class="fas fa-network-wired"></i>
+                Ports (${portsTotal})
+                <span class="accordion-header-stats">
+                    ${createStatusBadge('up', portsUp + ' UP')}
+                    ${createStatusBadge('down', portsDown + ' DOWN')}
+                </span>
+            </h3>
+            <div>
+                <div class="ports-accordion">
+        `;
+
+        ports.forEach((port, index) => {
+            const statusIcon = port.status === 'up' ? 'fa-check-circle' : 'fa-times-circle';
+            const statusColor = port.status === 'up' ? '#28a745' : '#dc3545';
+            
+            content += `
+                <h4>
+                    <i class="fas ${statusIcon}" style="color: ${statusColor}"></i>
+                    Port ${port.port} - ${port.description || 'Sans description'}
+                    ${createStatusBadge(port.status)}
+                </h4>
+                <div>
+                    ${generatePortDetailsHTML(port)}
+                </div>
+            `;
+        });
+
+        content += `
+                </div>
+            </div>
+        `;
+    } else {
+        content += `
+            <h3>
+                <i class="fas fa-network-wired"></i>
+                Ports
+                ${createStatusBadge('warning', 'AUCUN')}
+            </h3>
+            <div>
+                <div class="accordion-status-message warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Aucun port trouvé pour cet équipement.
+                </div>
+            </div>
+        `;
+    }
+
+    content += `</div>`;
+
+    return content;
+}
+
+// Fonction améliorée pour afficher les services avec accordéons
+function afficherServiceWithAccordion(data) {
+    console.log('afficherServiceWithAccordion appelée');
+    
+    if (!data || typeof data !== 'object') {
+        return "<p>Erreur : Données invalides</p>";
+    }
+
+    let content = '';
+
+    // Traitement pour services avec plusieurs équipements
+    if (data.equipments && Array.isArray(data.equipments)) {
+        const totalEquipments = data.equipments.length;
+        const successfulEquipments = data.equipments.filter(eq => eq.resultat_script && !eq.resultat_script.error).length;
+        
+        content += `
+            <div class="equipment-accordion">
+                <h3>
+                    <i class="fas fa-cogs"></i>
+                    Service ${data.service_id || 'N/A'}
+                    <span class="accordion-header-stats">
+                        ${createStatusBadge('up', successfulEquipments + '/' + totalEquipments + ' OK')}
+                    </span>
+                </h3>
+                <div>
+                    <table class="accordion-table">
+                        <tr>
+                            <th>Service ID</th>
+                            <td>${data.service_id || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <th>Statut global</th>
+                            <td>${createStatusBadge(data.success ? 'up' : 'down', data.success ? 'Succès' : 'Échec')}</td>
+                        </tr>
+                        <tr>
+                            <th>Nombre d'équipements</th>
+                            <td>${totalEquipments}</td>
+                        </tr>
+                        <tr>
+                            <th>Équipements opérationnels</th>
+                            <td>${successfulEquipments}</td>
+                        </tr>
+                    </table>
+                </div>
+        `;
+
+        // Affichage des équipements individuels
+        if (data.equipments.length > 0) {
+            content += `
+                <h3>
+                    <i class="fas fa-server"></i>
+                    Équipements (${totalEquipments})
+                </h3>
+                <div>
+                    <div class="entity-accordion">
+            `;
+
+            data.equipments.forEach((equipment, index) => {
+                const script = equipment.resultat_script;
+                const hasError = script && script.error;
+                const statusIcon = hasError ? 'fa-times-circle' : 'fa-check-circle';
+                const statusColor = hasError ? '#dc3545' : '#28a745';
+                
+                content += `
+                    <h4>
+                        <i class="fas ${statusIcon}" style="color: ${statusColor}"></i>
+                        ${equipment.hostname} - Port ${equipment.port || 'N/A'}
+                        ${createStatusBadge(hasError ? 'down' : 'up', hasError ? 'ERREUR' : 'OK')}
+                    </h4>
+                    <div>
+                `;
+
+                if (script && !hasError) {
+                    // Affichage des informations de l'équipement
+                    content += `
+                        <table class="accordion-table">
+                            <tr>
+                                <th>Hostname</th>
+                                <td>${equipment.hostname}</td>
+                            </tr>
+                            <tr>
+                                <th>Port</th>
+                                <td>${equipment.port || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <th>IP</th>
+                                <td>${script.ip_address || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <th>DNS</th>
+                                <td>${script.dns_complet || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <th>Type</th>
+                                <td>${script.type || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <th>Version</th>
+                                <td id="version-cell-service-accordion-${index}">${script.Version || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    // Affichage des ports si disponibles
+                    if (script.ports && script.ports.length > 0) {
+                        content += `
+                            <div class="ports-accordion" style="margin-top: 15px;">
+                        `;
+
+                        script.ports.forEach(port => {
+                            content += `
+                                <h5>
+                                    <i class="fas fa-ethernet"></i>
+                                    Port ${port.port} - ${port.description || 'Sans description'}
+                                    ${createStatusBadge(port.status)}
+                                </h5>
+                                <div>
+                                    ${generatePortDetailsHTML(port)}
+                                </div>
+                            `;
+                        });
+
+                        content += `</div>`;
+                    }
+                } else if (hasError) {
+                    content += `
+                        <div class="accordion-status-message error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>Erreur:</strong> ${script.error}
+                        </div>
+                        <table class="accordion-table">
+                            <tr>
+                                <th>Hostname</th>
+                                <td>${equipment.hostname}</td>
+                            </tr>
+                            <tr>
+                                <th>Port</th>
+                                <td>${equipment.port || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <th>Type détecté</th>
+                                <td>${script.type || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    `;
+                } else {
+                    content += `
+                        <div class="accordion-status-message warning">
+                            <i class="fas fa-question-circle"></i>
+                            Données non disponibles pour cet équipement.
+                        </div>
+                    `;
+                }
+
+                content += `</div>`;
+            });
+
+            content += `
+                    </div>
+                </div>
+            `;
+        }
+
+        content += `</div>`;
+    } else {
+        // Traitement pour équipement simple
+        content = afficherPBBWithAccordion(data);
+    }
+
+    return content;
+}
+
+// ========================================================================
+// FONCTIONS ORIGINALES MISES À JOUR
+// ========================================================================
 
 export function afficherOLT(data) {
     console.log('afficherOLT()');
@@ -279,426 +735,87 @@ function compareVersions(current, latest) {
 
 export function afficherPBB(data) {
     console.log('afficherPBB appelée');
-    console.log('Données reçues pour PBB :', data);
-
-    if (!data || typeof data !== 'object') {
-        return "<p>Erreur : Données invalides</p>";
+    
+    const rectangleDonnee = document.getElementById('rectangleDonnee');
+    
+    if (!rectangleDonnee) {
+        console.error("L'élément rectangleDonnee est introuvable dans le DOM.");
+        return;
     }
 
-    // Fonction pour formater les statuts avec couleurs
-    function formatStatus(status, type = 'general') {
-        if (!status || status === 'N/A') {
-            return `<span class="status-warning">N/A</span>`;
-        }
-        
-        const statusLower = status.toString().toLowerCase();
-        
-        switch (type) {
-            case 'admin':
-            case 'port':
-                if (statusLower === 'up') {
-                    return `<span class="status-up">${status}</span>`;
-                } else if (statusLower === 'down') {
-                    return `<span class="status-down">${status}</span>`;
-                } else {
-                    return `<span class="status-warning">${status}</span>`;
-                }
-                
-            case 'alarm':
-                if (statusLower === 'none' || statusLower === 'aucune') {
-                    return `<span class="alarm-none">${status}</span>`;
-                } else {
-                    return `<span class="alarm-active">${status}</span>`;
-                }
-                
-            default:
-                return `<span>${status}</span>`;
-        }
-    }
-
-    // Fonction pour formater les puissances optiques
-    function formatOpticalPower(powerValue) {
-        if (!powerValue || powerValue === 'N/A') {
-            return `<span class="status-warning">N/A</span>`;
-        }
-
-        // Extraire la valeur numérique
-        const numericPower = parseFloat(powerValue.toString().replace(/[^\d.-]/g, ''));
-        
-        if (isNaN(numericPower)) {
-            return `<span class="status-warning">${powerValue}</span>`;
-        }
-
-        // Logique simplifiée pour les puissances :
-        // < -25 dBm : danger (rouge)
-        // -25 à -15 dBm : warning (orange)  
-        // > -15 dBm : good (vert)
-        if (numericPower < -25) {
-            return `<span class="power-danger">${powerValue}</span>`;
-        } else if (numericPower < -15) {
-            return `<span class="power-warning">${powerValue}</span>`;
-        } else {
-            return `<span class="power-good">${powerValue}</span>`;
-        }
-    }
-
-    let content = `<h2>Informations générales</h2>
-    <table class="table_olt">
-        <tr><td class="table_olt_th">Hostname</td><td>${data.equipment_info?.hostname ?? 'N/A'}</td></tr>
-        <tr><td class="table_olt_th">IP</td><td>${data.equipment_info?.ip_address ?? 'N/A'}</td></tr>
-        <tr><td class="table_olt_th">DNS</td><td>${data.equipment_info?.dns_complet ?? 'N/A'}</td></tr>
-        <tr><td class="table_olt_th">Type</td><td>${data.equipment_info?.type ?? 'N/A'}</td></tr>
-        <tr><td class="table_olt_th">Version</td><td id="version-cell-pbb">${data.equipment_info?.Version ?? 'N/A'}</td></tr>
-    </table>`;
-
+    // Utiliser la nouvelle fonction avec accordéons
+    const content = afficherPBBWithAccordion(data);
+    rectangleDonnee.innerHTML = content;
+    
     // Vérification asynchrone de la version après affichage initial
     if (data.equipment_info?.type && data.equipment_info?.Version) {
         setTimeout(() => {
             formatVersionStatus(data.equipment_info.type, data.equipment_info.Version).then(formattedVersion => {
-                const versionCell = document.getElementById('version-cell-pbb');
+                const versionCell = document.getElementById('version-cell-pbb-accordion');
                 if (versionCell) {
                     versionCell.innerHTML = formattedVersion;
                 }
             });
         }, 100);
     }
-
-    if (data.ports?.length > 0) {
-        content += `<h2>Ports (${data.ports.length})</h2>`;
-
-        data.ports.forEach(port => {
-            content += `<div class="port-box">`;
-            content += `<h4>Port ${port.port}</h4>`;
-            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-            content += `<p><strong>Signal RX :</strong> ${formatOpticalPower(port.signal_optique_rx)}</p>`;
-            
-            // Ajouter le seuil RX directement sous la valeur RX
-            if (port.threshold) {
-                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-            }
-            
-            content += `<p><strong>Signal TX :</strong> ${formatOpticalPower(port.signal_optique_tx)}</p>`;
-            
-            // Ajouter le seuil TX directement sous la valeur TX
-            if (port.threshold) {
-                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-            }
-            
-            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-
-            // Informations SFP/QSFP si disponibles
-            if (port.type_sfp) {
-                content += `<h5>Informations SFP/QSFP</h5>`;
-                content += `<p><strong>PID :</strong> ${port.type_sfp?.PID ?? 'N/A'}</p>`;
-                content += `<p><strong>Type Optique :</strong> ${port.type_sfp?.['Optics type'] ?? 'N/A'}</p>`;
-                content += `<p><strong>Nom :</strong> ${port.type_sfp?.Name ?? 'N/A'}</p>`;
-                content += `<p><strong>Part Number :</strong> ${port.type_sfp?.['Part Number'] ?? 'N/A'}</p>`;
-            }
-            
-            content += `</div>`;
-        });
-    } else {
-        content += `<p class="no-data">Aucun port trouvé</p>`;
-    }
-
+    
+    // Initialiser les accordéons
+    setTimeout(() => {
+        initializeAccordions();
+    }, 150);
+    
+    rectangleDonnee.style.display = 'block';
     console.log('fin afficherPBB()');
-    return content;
 }
 
 export function afficherService(data) {
     console.log('afficherService appelée');
-    console.log('Données reçues pour Service :', data);
-
-    if (!data || typeof data !== 'object') {
-        return "<p>Erreur : Données invalides</p>";
+    
+    const rectangleDonnee = document.getElementById('rectangleDonnee');
+    
+    if (!rectangleDonnee) {
+        console.error("L'élément rectangleDonnee est introuvable dans le DOM.");
+        return;
     }
 
-    // Fonction pour formater les statuts avec couleurs
-    function formatStatus(status, type = 'general') {
-        if (!status || status === 'N/A') {
-            return `<span class="status-warning">N/A</span>`;
-        }
-        
-        const statusLower = status.toString().toLowerCase();
-        
-        switch (type) {
-            case 'admin':
-            case 'port':
-                if (statusLower === 'up') {
-                    return `<span class="status-up">${status}</span>`;
-                } else if (statusLower === 'down') {
-                    return `<span class="status-down">${status}</span>`;
-                } else {
-                    return `<span class="status-warning">${status}</span>`;
-                }
-                
-            case 'alarm':
-                if (statusLower === 'none' || statusLower === 'aucune') {
-                    return `<span class="alarm-none">${status}</span>`;
-                } else {
-                    return `<span class="alarm-active">${status}</span>`;
-                }
-                
-            default:
-                return `<span>${status}</span>`;
-        }
-    }
-
-    // Fonction pour déterminer la classe de couleur des puissances optiques
-    function getPowerColorClass(powerValue, thresholds) {
-        if (!powerValue || !thresholds || powerValue === 'N/A') {
-            return 'status-warning';
-        }
-
-        // Extraire la valeur numérique de la puissance (enlever "dBm")
-        const numericPower = parseFloat(powerValue.toString().replace(/[^\d.-]/g, ''));
-        
-        if (isNaN(numericPower)) {
-            return 'status-warning';
-        }
-
-        const rxHigh = parseFloat(thresholds.rx_high || 0);
-        const rxLow = parseFloat(thresholds.rx_low || 0);
-        const txHigh = parseFloat(thresholds.tx_high || 0);
-        const txLow = parseFloat(thresholds.tx_low || 0);
-
-        // Déterminer les seuils selon que c'est RX ou TX
-        let highThreshold, lowThreshold;
-        if (powerValue.toString().includes('rx') || arguments[2] === 'rx') {
-            highThreshold = rxHigh;
-            lowThreshold = rxLow;
-        } else {
-            highThreshold = txHigh;
-            lowThreshold = txLow;
-        }
-
-        // Logique des couleurs :
-        // Rouge : dépasse les limites
-        if (numericPower > highThreshold || numericPower < lowThreshold) {
-            return 'power-danger';
-        }
-        
-        // Orange : à 2dB des limites
-        if ((numericPower > (highThreshold - 2)) || (numericPower < (lowThreshold + 2))) {
-            return 'power-warning';
-        }
-        
-        // Vert : dans la plage normale
-        return 'power-good';
-    }
-
-    // Fonction pour formater une puissance avec couleur
-    function formatPowerWithColor(powerValue, thresholds, type = '') {
-        const colorClass = getPowerColorClass(powerValue, thresholds);
-        const displayValue = powerValue ?? 'N/A';
-        return `<span class="${colorClass}">${displayValue}</span>`;
-    }
-
-    // Vérifier si les données sont dans le format "service" (avec equipments) ou "equipment" (avec equipment_info)
+    // Utiliser la nouvelle fonction avec accordéons
+    const content = afficherServiceWithAccordion(data);
+    rectangleDonnee.innerHTML = content;
+    
+    // Vérifications asynchrones des versions après affichage initial
     if (data.equipments && Array.isArray(data.equipments)) {
-        // Format service avec plusieurs équipements
-        let content = `<h2>Informations du service</h2>`;
-        
-        content += `<p><strong>Service ID :</strong> ${data.service_id ?? 'N/A'}</p>`;
-        content += `<p><strong>Statut :</strong> ${formatStatus(data.success ? 'Succès' : 'Échec')}</p>`;
-        content += `<p><strong>Nombre d'équipements :</strong> ${data.equipment_count ?? 'N/A'}</p>`;
-
-        // Affichage des équipements
-        if (data.equipments.length > 0) {
-            content += `<h2>Équipements (${data.equipments.length})</h2>`;
-            
-            data.equipments.forEach((equipment, index) => {
-                const script = equipment.resultat_script;
-                
-                content += `<h3>Équipement ${index + 1}: ${equipment.hostname}</h3>`;
-                content += `<p><strong>Hostname :</strong> ${equipment.hostname}</p>`;
-                content += `<p><strong>Port :</strong> ${equipment.port ?? 'N/A'}</p>`;
-                
-                if (script && !script.error) {
-                    content += `<p><strong>IP :</strong> ${script.ip_address ?? 'N/A'}</p>`;
-                    content += `<p><strong>DNS :</strong> ${script.dns_complet ?? 'N/A'}</p>`;
-                    content += `<p><strong>Type :</strong> ${script.type ?? 'N/A'}</p>`;
-                    content += `<p><strong>Version :</strong> <span id="version-cell-service-${index}">${script.Version ?? 'N/A'}</span></p>`;
-
-                    // Vérification asynchrone de la version
-                    if (script.type && script.Version) {
-                        setTimeout(() => {
-                            formatVersionStatus(script.type, script.Version).then(formattedVersion => {
-                                const versionCell = document.getElementById(`version-cell-service-${index}`);
-                                if (versionCell) {
-                                    versionCell.innerHTML = formattedVersion;
-                                }
-                            });
-                        }, 100 + (index * 10)); // Délai échelonné pour éviter les conflits
-                    }
-
-                    // Affichage des ports si disponibles
-                    if (script.ports && script.ports.length > 0) {
-                        content += `<h4>Ports détaillés</h4>`;
-
-                        script.ports.forEach(port => {
-                            // Formater les puissances avec couleurs
-                            const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
-                            const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
-                            
-                            content += `<div class="port-box">`;
-                            content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
-                            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-                            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-                            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-                            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-                            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-                            content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
-                            
-                            // Ajouter le seuil RX directement sous la valeur RX
-                            if (port.threshold) {
-                                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-                            }
-                            
-                            content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
-                            
-                            // Ajouter le seuil TX directement sous la valeur TX
-                            if (port.threshold) {
-                                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-                            }
-                            
-                            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-                            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-                            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-                            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-                            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-                            
-                            // Ajouter les informations SFP
-                            if (port.type_sfp) {
-                                content += `<h5>Informations SFP/QSFP</h5>`;
-                                content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
-                                content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
-                                content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
-                                content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
-                            }
-                            
-                            content += `</div>`;
-                        });
-                    } else {
-                        content += `<p class="no-data">Aucun port détaillé trouvé pour cet équipement.</p>`;
-                    }
-                } else if (script && script.error) {
-                    content += `<p><strong>Statut :</strong> ${formatStatus('Erreur', 'general')}</p>`;
-                    content += `<p><strong>Type :</strong> ${script.type ?? 'N/A'}</p>`;
-                    content += `<div style="background-color: #ffe6e6; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        <strong>Erreur:</strong> ${script.error}
-                    </div>`;
-                } else {
-                    content += `<p><strong>Statut :</strong> Données non disponibles</p>`;
-                }
-                
-                // Séparateur entre équipements
-                if (index < data.equipments.length - 1) {
-                    content += `<hr style="margin: 20px 0; border: 1px solid #ddd;">`;
+        data.equipments.forEach((equipment, index) => {
+            const script = equipment.resultat_script;
+            if (script && script.type && script.Version) {
+                setTimeout(() => {
+                    formatVersionStatus(script.type, script.Version).then(formattedVersion => {
+                        const versionCell = document.getElementById(`version-cell-service-accordion-${index}`);
+                        if (versionCell) {
+                            versionCell.innerHTML = formattedVersion;
+                        }
+                    });
+                }, 100 + (index * 10)); // Délai échelonné pour éviter les conflits
+            }
+        });
+    } else if (data.equipment_info?.type && data.equipment_info?.Version) {
+        setTimeout(() => {
+            formatVersionStatus(data.equipment_info.type, data.equipment_info.Version).then(formattedVersion => {
+                const versionCell = document.getElementById('version-cell-simple');
+                if (versionCell) {
+                    versionCell.innerHTML = formattedVersion;
                 }
             });
-        } else {
-            content += `<p class="no-data">Aucun équipement trouvé</p>`;
-        }
-
-        return content;
-    } else {
-        // Format equipment simple avec equipment_info
-        const equipInfo = data.equipment_info || {};
-        
-        let content = `<h2>Informations du service/équipement</h2>`;
-        content += `<p><strong>Hostname :</strong> ${equipInfo.hostname ?? 'N/A'}</p>`;
-        content += `<p><strong>IP :</strong> ${equipInfo.ip_address ?? 'N/A'}</p>`;
-        content += `<p><strong>DNS :</strong> ${equipInfo.dns_complet ?? 'N/A'}</p>`;
-        content += `<p><strong>Type :</strong> ${equipInfo.type ?? 'N/A'}</p>`;
-        content += `<p><strong>Version :</strong> <span id="version-cell-simple">${equipInfo.Version ?? 'N/A'}</span></p>`;
-
-        // Vérification asynchrone de la version
-        if (equipInfo.type && equipInfo.Version) {
-            setTimeout(() => {
-                formatVersionStatus(equipInfo.type, equipInfo.Version).then(formattedVersion => {
-                    const versionCell = document.getElementById('version-cell-simple');
-                    if (versionCell) {
-                        versionCell.innerHTML = formattedVersion;
-                    }
-                });
-            }, 100); // Délai pour que le DOM soit mis à jour
-        }
-
-        // Vérifier si les données semblent être des erreurs de résolution DNS
-        if (equipInfo.ip_address === "DNS non résolu" || equipInfo.dns_complet === "DNS non résolu") {
-            content += `<div class="dns-error">
-                <strong>Attention :</strong> Les informations DNS ne peuvent pas être résolues. 
-                Cela peut indiquer un problème de connectivité ou que l'équipement n'est pas accessible.
-            </div>`;
-        }
-
-        if (data.ports && data.ports.length > 0) {
-            content += `<h2>Ports (${data.ports.length})</h2>`;
-
-            data.ports.forEach(port => {
-                // Formater les puissances avec couleurs
-                const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
-                const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
-                
-                content += `<div class="port-box">`;
-                content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
-                content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-                content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-                content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-                content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-                content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-                content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
-                
-                // Seuil en dessous de la valeur RX
-                if (port.threshold) {
-                    content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-                }
-                
-                content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
-                
-                // Seuils en dessous de la valeur TX
-                if (port.threshold) {
-                    content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-                }
-                
-                content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-                content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-                content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-                content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-                content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-                
-                // Ajouter les informations SFP
-                if (port.type_sfp) {
-                    content += `<h4>Informations SFP/QSFP</h4>`;
-                    content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
-                    content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
-                    content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
-                    content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
-                }
-                
-                content += `</div>`;
-            });
-        } else {
-            content += `<div class="no-data">
-                <p><strong>Aucun port trouvé</strong></p>
-                <p>Cela peut être normal pour certains types de services ou indiquer que les données ne sont pas encore disponibles.</p>
-            </div>`;
-        }
-
-        return content;
+        }, 100);
     }
+    
+    // Initialiser les accordéons
+    setTimeout(() => {
+        initializeAccordions();
+    }, 150);
+    
+    rectangleDonnee.style.display = 'block';
+    console.log('fin afficherService()');
 }
-
-
 
 export function afficherServiceWDM(dataToDisplay) {
     const equipementData = dataToDisplay.find(item => item["Nom equipement"]);
@@ -799,7 +916,6 @@ window.toggleDetails = function(index) {
     }
 }
 
-
 export function afficherInfoDNS(dns){
     console.log("Information DNS pour :", dns);
 }
@@ -810,7 +926,7 @@ export function searchEquipement(idService, typeCarte, slot)
 }
 
 export function toggleContent(event){
-    var conent = event.target.parentElement.nextElementSibling;
+    var content = event.target.parentElement.nextElementSibling;
     if (content.classList.contains('hidden-content')){
         content.classList.remove('hidden-content');
         content.classList.add('visible-content');
@@ -835,6 +951,7 @@ export function hideLoadingIcon()
 {
     $('.btn-verification').html('<b>Vérification</b>').attr('disabled', false);
 }
+
 export function resetContainers()
 {
     var dnsResultatDiv = document.getElementById('dns-resultat');
@@ -953,7 +1070,7 @@ export function afficherInfoTexte(infoText)
 
 export function afficherDetailsEMUX(data)
 {
-    var dnsContainer = document.gerElementByID('dns-container');
+    var dnsContainer = document.getElementById('dns-container');
     var emuxResultatDiv = document.getElementById('emux-container');
     var dnsResultatDiv = document.getElementById('dns-resultat');
     dnsResultatDiv.innerHTML = '';

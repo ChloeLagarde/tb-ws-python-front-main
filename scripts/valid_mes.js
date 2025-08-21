@@ -2,6 +2,260 @@ import afficherDonneesService from './Js_service/service.js';
 import afficherDonneesEquipment from './Js_equipment/equipment.js';
 import { afficherService } from './Js_equipment/Affichage_Equipment.js';
 
+// ========================================================================
+// FONCTIONS UTILITAIRES POUR JQUERY UI
+// ========================================================================
+
+// Fonction pour initialiser les accordéons jQuery UI dans valid_mes.js
+function initializeAccordionsMain() {
+    // Vérifier si jQuery UI est disponible
+    if (typeof $.ui === 'undefined') {
+        console.warn('jQuery UI non disponible, utilisation de l\'affichage classique');
+        return;
+    }
+
+    // Accordéon principal pour les équipements
+    $(".equipment-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 300,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-circle-arrow-e",
+            activeHeader: "ui-icon-circle-arrow-s"
+        }
+    });
+
+    // Accordéon pour les ports
+    $(".ports-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 200,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-triangle-1-e",
+            activeHeader: "ui-icon-triangle-1-s"
+        }
+    });
+
+    // Accordéon pour les LAG et entités mères
+    $(".lag-accordion, .entity-accordion").accordion({
+        collapsible: true,
+        active: false,
+        animate: 250,
+        heightStyle: "content",
+        icons: {
+            header: "ui-icon-plus",
+            activeHeader: "ui-icon-minus"
+        }
+    });
+
+    console.log('Accordéons jQuery UI initialisés depuis valid_mes.js');
+}
+
+// Fonction pour gérer l'affichage avec accordéons
+function setupAccordionDisplayMain(data, container) {
+    let htmlContent;
+    
+    // Déterminer le type d'affichage basé sur les données
+    if (data.equipments && Array.isArray(data.equipments)) {
+        // Service avec plusieurs équipements - utiliser la fonction d'affichage service
+        htmlContent = generateServiceAccordionHTML(data);
+    } else if (data.equipment_info || data.ports) {
+        // Équipement simple - utiliser la fonction d'affichage PBB
+        htmlContent = generateEquipmentAccordionHTML(data);
+    } else {
+        htmlContent = "<p>Format de données non reconnu</p>";
+    }
+    
+    // Injecter le contenu
+    if (typeof container === 'string') {
+        document.getElementById(container).innerHTML = htmlContent;
+    } else {
+        container.innerHTML = htmlContent;
+    }
+    
+    // Initialiser les accordéons après un délai pour s'assurer que le DOM est mis à jour
+    setTimeout(() => {
+        initializeAccordionsMain();
+    }, 100);
+    
+    container.style.display = 'block';
+    return htmlContent;
+}
+
+// Fonctions pour générer le HTML des accordéons (versions simplifiées)
+function generateServiceAccordionHTML(data) {
+    if (!data.equipments || !Array.isArray(data.equipments)) {
+        return "<p>Aucun équipement trouvé dans le service</p>";
+    }
+
+    const totalEquipments = data.equipments.length;
+    const successfulEquipments = data.equipments.filter(eq => eq.resultat_script && !eq.resultat_script.error).length;
+
+    return `
+        <div class="equipment-accordion">
+            <h3>
+                <i class="fas fa-cogs"></i>
+                Service ${data.service_id || 'N/A'}
+                <span class="status-badge badge-up">${successfulEquipments}/${totalEquipments} OK</span>
+            </h3>
+            <div>
+                <table class="accordion-table">
+                    <tr><th>Service ID</th><td>${data.service_id || 'N/A'}</td></tr>
+                    <tr><th>Statut global</th><td><span class="status-badge ${data.success ? 'badge-up' : 'badge-down'}">${data.success ? 'Succès' : 'Échec'}</span></td></tr>
+                    <tr><th>Nombre d'équipements</th><td>${totalEquipments}</td></tr>
+                    <tr><th>Équipements opérationnels</th><td>${successfulEquipments}</td></tr>
+                </table>
+            </div>
+            <h3>
+                <i class="fas fa-server"></i>
+                Équipements (${totalEquipments})
+            </h3>
+            <div>
+                <div class="entity-accordion">
+                    ${data.equipments.map((equipment, index) => generateEquipmentItemHTML(equipment, index)).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateEquipmentItemHTML(equipment, index) {
+    const script = equipment.resultat_script;
+    const hasError = script && script.error;
+    const statusIcon = hasError ? 'fa-times-circle' : 'fa-check-circle';
+    const statusColor = hasError ? '#dc3545' : '#28a745';
+    
+    return `
+        <h4>
+            <i class="fas ${statusIcon}" style="color: ${statusColor}"></i>
+            ${equipment.hostname} - Port ${equipment.port || 'N/A'}
+            <span class="status-badge ${hasError ? 'badge-down' : 'badge-up'}">${hasError ? 'ERREUR' : 'OK'}</span>
+        </h4>
+        <div>
+            ${hasError ? `
+                <div class="accordion-status-message error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Erreur:</strong> ${script.error}
+                </div>
+            ` : `
+                <table class="accordion-table">
+                    <tr><th>Hostname</th><td>${equipment.hostname}</td></tr>
+                    <tr><th>Port</th><td>${equipment.port || 'N/A'}</td></tr>
+                    <tr><th>IP</th><td>${script?.ip_address || 'N/A'}</td></tr>
+                    <tr><th>DNS</th><td>${script?.dns_complet || 'N/A'}</td></tr>
+                    <tr><th>Type</th><td>${script?.type || 'N/A'}</td></tr>
+                    <tr><th>Version</th><td>${script?.Version || 'N/A'}</td></tr>
+                </table>
+            `}
+        </div>
+    `;
+}
+
+function generateEquipmentAccordionHTML(data) {
+    const equipInfo = data.equipment_info || {};
+    const ports = data.ports || [];
+    
+    const portsUp = ports.filter(p => p.status === 'up').length;
+    const portsDown = ports.filter(p => p.status === 'down').length;
+    const portsTotal = ports.length;
+
+    return `
+        <div class="equipment-accordion">
+            <h3>
+                <i class="fas fa-server"></i>
+                Informations générales - ${equipInfo.hostname || 'N/A'}
+                <span class="status-badge badge-up">ACTIF</span>
+            </h3>
+            <div>
+                <table class="accordion-table">
+                    <tr><th>Hostname</th><td>${equipInfo.hostname || 'N/A'}</td></tr>
+                    <tr><th>Adresse IP</th><td>${equipInfo.ip_address || 'N/A'}</td></tr>
+                    <tr><th>DNS Complet</th><td>${equipInfo.dns_complet || 'N/A'}</td></tr>
+                    <tr><th>Type d'équipement</th><td>${equipInfo.type || 'N/A'}</td></tr>
+                    <tr><th>Version logicielle</th><td>${equipInfo.Version || 'N/A'}</td></tr>
+                </table>
+            </div>
+            ${portsTotal > 0 ? `
+                <h3>
+                    <i class="fas fa-network-wired"></i>
+                    Ports (${portsTotal})
+                    <span class="status-badge badge-up">${portsUp} UP</span>
+                    <span class="status-badge badge-down">${portsDown} DOWN</span>
+                </h3>
+                <div>
+                    <div class="ports-accordion">
+                        ${ports.map(port => generatePortItemHTML(port)).join('')}
+                    </div>
+                </div>
+            ` : `
+                <h3>
+                    <i class="fas fa-network-wired"></i>
+                    Ports
+                    <span class="status-badge badge-warning">AUCUN</span>
+                </h3>
+                <div>
+                    <div class="accordion-status-message warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Aucun port trouvé pour cet équipement.
+                    </div>
+                </div>
+            `}
+        </div>
+    `;
+}
+
+function generatePortItemHTML(port) {
+    const statusIcon = port.status === 'up' ? 'fa-check-circle' : 'fa-times-circle';
+    const statusColor = port.status === 'up' ? '#28a745' : '#dc3545';
+    
+    return `
+        <h4>
+            <i class="fas ${statusIcon}" style="color: ${statusColor}"></i>
+            Port ${port.port} - ${port.description || 'Sans description'}
+            <span class="status-badge ${port.status === 'up' ? 'badge-up' : 'badge-down'}">${port.status?.toUpperCase()}</span>
+        </h4>
+        <div>
+            <div class="port-card">
+                <div class="port-header">
+                    <span class="port-name">Port ${port.port}</span>
+                    <span class="status-badge badge-info">${port.bandwidth || 'N/A'}</span>
+                </div>
+                <div class="port-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Statut:</span>
+                        <span class="detail-value">${port.status || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Admin:</span>
+                        <span class="detail-value">${port.admin_status || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">MAC:</span>
+                        <span class="detail-value">${port.physical_address || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Description:</span>
+                        <span class="detail-value">${port.description || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Signal RX:</span>
+                        <span class="detail-value">${port.signal_optique_rx || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Signal TX:</span>
+                        <span class="detail-value">${port.signal_optique_tx || 'N/A'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ========================================================================
+// FONCTIONS PRINCIPALES (CODE ORIGINAL AVEC MODIFICATIONS)
+// ========================================================================
 
 function isDataEffectivelyEmpty(data) {
     if (Array.isArray(data)) {
@@ -138,18 +392,18 @@ async function getData(url) {
     }
 }
 
-// Fonction principale d'affichage
+// Fonction principale d'affichage MODIFIÉE pour jQuery UI
 async function afficherData(input, ip = "", slot = "") {
     if (!input) {
         alert("Veuillez remplir le champ ID Service");
-        resetButton(); // Remettre le bouton à l'état normal
+        resetButton();
         return;
     }
 
     const rectangleDonnee = document.getElementById("rectangleDonnee");
     if (!rectangleDonnee) {
         console.error("Élément rectangleDonnee non trouvé");
-        resetButton(); // Remettre le bouton à l'état normal
+        resetButton();
         return;
     }
     
@@ -172,46 +426,34 @@ async function afficherData(input, ip = "", slot = "") {
             return;
         }
 
-        // Si ce n'est PAS un service connu, appeler directement afficherService
+        // Si ce n'est PAS un service connu, appeler directement afficherService avec accordéons
         if (!isService) {
-            console.log("Input ne fait pas partie des types de service connus, appel direct d'afficherService");
+            console.log("Input ne fait pas partie des types de service connus, appel avec accordéons");
             
             let url;
             
-            // NOUVELLE LOGIQUE : Détecter automatiquement si l'input contient un underscore (équipement_ip)
             let equipmentName = input;
             let detectedPort = ip;
             
-            // Si l'input contient un underscore, séparer le nom d'équipement de l'IP/port
             if (input.includes('_')) {
                 const parts = input.split('_');
                 equipmentName = parts[0];
-                detectedPort = parts.slice(1).join('_'); // Rejoindre les parties après le premier underscore
+                detectedPort = parts.slice(1).join('_');
                 
                 console.log(`Séparation détectée - Équipement: ${equipmentName}, Port: ${detectedPort}`);
-                
-                // Construire l'URL avec le nom complet encodé (équipement_port)
                 url = `${baseUrl}equipment/${encodeURIComponent(input)}`;
             } else if (input.includes("PBB")) {
-                // Logique existante pour PBB avec paramètres séparés
                 const params = [];
                 if (ip) params.push(`port=${encodeURIComponent(ip)}`);
                 if (slot) params.push(`slot=${encodeURIComponent(slot)}`);
                 const queryString = params.length ? `?${params.join("&")}` : "";
                 url = `${baseUrl}equipment/${input}${queryString}`;
             } else {
-                // Cas standard sans underscore ni PBB
                 url = `${baseUrl}equipment/${input}`;
             }
 
             const startTime = performance.now();
             console.log("URL appelée :", url);
-
-            const loadingMessage = document.createElement("div");
-            loadingMessage.className = "loader";
-            loadingMessage.innerText = `Envoi de la requête à l'équipement ${equipmentName}${detectedPort ? ` (port: ${detectedPort})` : ''}`;
-            
-            //rectangleDonnee.appendChild(loadingMessage);
 
             try {
                 const data = await getData(url);
@@ -226,7 +468,6 @@ async function afficherData(input, ip = "", slot = "") {
                         </p>
                     `;
 
-                    // Ping + vérification du contenu
                     pingReporting(url).then(status1 => {
                         rectangleDonnee.innerHTML += `
                             <p>
@@ -238,9 +479,8 @@ async function afficherData(input, ip = "", slot = "") {
                     return;
                 }
 
-                // Appel direct d'afficherService pour les inputs non reconnus
-                const htmlContent = afficherService(data);
-                rectangleDonnee.innerHTML = htmlContent;
+                // MODIFICATION : Utiliser l'affichage avec accordéons
+                setupAccordionDisplayMain(data, rectangleDonnee);
 
                 const endTime = performance.now();
                 console.log(`Temps écoulé pour l'affichage des données : ${(endTime - startTime).toFixed(2)} ms`);
@@ -250,7 +490,7 @@ async function afficherData(input, ip = "", slot = "") {
                 console.error("Erreur lors de la récupération ou du traitement :", error);
             }
             
-            return; // Sortir de la fonction ici
+            return;
         }
 
         // Logique originale pour les services connus
@@ -271,12 +511,6 @@ async function afficherData(input, ip = "", slot = "") {
         const startTime = performance.now();
         console.log("URL appelée :", url);
 
-        const loadingMessage = document.createElement("div");
-        loadingMessage.className = "loader";
-        loadingMessage.innerText = `Envoi de la requête ${isService ? 'au service' : 'à l\'équipement'} ${input}`;
-        
-        //rectangleDonnee.appendChild(loadingMessage);
-
         try {
             const data = await getData(url);
 
@@ -290,7 +524,6 @@ async function afficherData(input, ip = "", slot = "") {
                     </p>
                 `;
 
-                // Premier ping + vérification du contenu
                 pingReporting(url).then(status1 => {
                     rectangleDonnee.innerHTML += `
                         <p>
@@ -299,7 +532,6 @@ async function afficherData(input, ip = "", slot = "") {
                     `;
                 });
 
-                // Deuxième ping + vérification sur l'URL ORDS
                 const ordsUrl = `https://ws-ords.m2m.axione.fr/ordscomxdsl/pwksrefpro/ref_sp?who=${encodeURIComponent(input)}`;
                 pingReporting(ordsUrl).then(status2 => {
                     rectangleDonnee.innerHTML += `
@@ -330,7 +562,12 @@ async function afficherData(input, ip = "", slot = "") {
 
             if (isService) {
                 if (typeof afficherDonneesService === 'function') {
-                    afficherDonneesService(data, input);
+                    // MODIFICATION : Vérifier si on peut utiliser les accordéons pour les services
+                    if (typeof $.ui !== 'undefined' && (data.equipments || data.equipment_info)) {
+                        setupAccordionDisplayMain(data, rectangleDonnee);
+                    } else {
+                        afficherDonneesService(data, input);
+                    }
                 } else {
                     console.error('afficherDonneesService function not available');
                     rectangleDonnee.innerHTML = `<p style="color:red;">❌ Fonction d'affichage service non disponible</p>`;
@@ -370,7 +607,6 @@ async function afficherData(input, ip = "", slot = "") {
         console.error("Erreur générale:", error);
         rectangleDonnee.innerHTML = `<p style="color:red;">❌ Erreur générale : ${error.message}</p>`;
     } finally {
-        // S'assurer que le bouton est TOUJOURS remis à l'état normal
         resetButton();
         $('#rectangleDonnee').show();
     }
@@ -408,6 +644,7 @@ function initializeEventListeners()
             $('#rectangleDonnee').show();
         }
     });
+    
     $(document).on('click', '#Bouton', function()
     {
         const serviceId = document.getElementById("zone_texte")?.value || "";
@@ -486,6 +723,15 @@ function checkConditions() {
 
 // Initialisation au chargement du DOM
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM chargé, initialisation des événements...');
+    
+    // Vérifier si jQuery UI est disponible
+    if (typeof $.ui !== 'undefined') {
+        console.log('jQuery UI détecté, les accordéons seront activés');
+    } else {
+        console.warn('jQuery UI non détecté, utilisation de l\'affichage classique');
+    }
+    
     initializeEventListeners();
     updateRectangleBleuHeight();
     

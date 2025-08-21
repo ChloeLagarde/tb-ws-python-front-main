@@ -344,49 +344,6 @@ label {
 }
 
 /* ========================================================================
-   MEDIA QUERIES
-   ======================================================================== */
-@media (max-width: 768px) {
-    #rectangleBleu, #rectangleDonnee, #rectangleGris, #rectangleIDservice {
-        width: 90%;
-        left: 5%;
-    }
-
-    #rectangleGris, #rectangleIDservice {
-        top: auto;
-        bottom: 0;
-        margin-bottom: 10px;
-    }
-
-    #texteMES, #texteService, #zone_texte, #Bouton {
-        font-size: 1rem;
-    }
-
-    #zone_texte {
-        width: 40%;
-    }
-
-    #Bouton {
-        width: 30%;
-    }
-}
-
-@media (max-width: 480px) {
-    #rectangleGris, #rectangleIDservice {
-        width: 95%;
-        left: 2.5%;
-    }
-
-    #zone_texte {
-        width: 70%;
-    }
-
-    #Bouton {
-        width: 50%;
-    }
-}
-
-/* ========================================================================
    DÉTAILS ET ANIMATIONS
    ======================================================================== */
 .details-row {
@@ -465,7 +422,6 @@ label {
     display: flex;
 }
 
-
 /* ========================================================================
    STYLE SPÉCIFIQUE POUR LE SÉLECTEUR
    ======================================================================== */
@@ -489,8 +445,6 @@ label {
     font-size: 1.25rem;
     margin-left: 10px;
 }
-
-
 
 .chevron {
   font-weight: bold;
@@ -540,7 +494,6 @@ table.carte {
   padding: 10px 15px;
   vertical-align: middle;
 }
-
 
 .site-monitoring-container {
     position: absolute;
@@ -939,4 +892,454 @@ hr {
     border-radius: 5px !important;
     margin: 20px 0 !important;
     color: #6c757d !important;
+}
+
+/* ========================================================================
+   STYLES JQUERY UI ACCORDION - NOUVEAUX STYLES AJOUTES
+   ======================================================================== */
+
+/* ========================================================================
+   SYSTÈME DE DÉPLIANT JQUERY UI - ACCORDION PRINCIPAL
+   ======================================================================== */
+.equipment-accordion {
+    margin: 20px 0;
+    border: none !important;
+}
+
+.equipment-accordion .ui-accordion-header {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    margin: 5px 0 !important;
+    padding: 12px 15px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+.equipment-accordion .ui-accordion-header:hover {
+    background: linear-gradient(135deg, #2980b9, #21618c) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.equipment-accordion .ui-accordion-header.ui-state-active {
+    background: linear-gradient(135deg, #27ae60, #229954) !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.equipment-accordion .ui-accordion-content {
+    background-color: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-top: none !important;
+    border-radius: 0 0 6px 6px !important;
+    padding: 15px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ========================================================================
+   ACCORDION POUR PORTS ET SOUS-ÉLÉMENTS
+   ======================================================================== */
+.ports-accordion {
+    margin: 15px 0;
+    border: none !important;
+}
+
+.ports-accordion .ui-accordion-header {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    margin: 3px 0 !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+.ports-accordion .ui-accordion-header:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226) !important;
+    transform: translateY(-1px);
+}
+
+.ports-accordion .ui-accordion-header.ui-state-active {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    border-radius: 4px 4px 0 0 !important;
+}
+
+.ports-accordion .ui-accordion-content {
+    background-color: #fff !important;
+    border: 1px solid #ddd !important;
+    border-top: none !important;
+    border-radius: 0 0 4px 4px !important;
+    padding: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ========================================================================
+   ACCORDION POUR LAG (Link Aggregation Groups)
+   ======================================================================== */
+.lag-accordion {
+    margin: 10px 0;
+    border: none !important;
+}
+
+.lag-accordion .ui-accordion-header {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    margin: 2px 0 !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.lag-accordion .ui-accordion-header:hover {
+    background: linear-gradient(135deg, #8e44ad, #7d3c98) !important;
+}
+
+.lag-accordion .ui-accordion-header.ui-state-active {
+    background: linear-gradient(135deg, #16a085, #138d75) !important;
+    border-radius: 4px 4px 0 0 !important;
+}
+
+.lag-accordion .ui-accordion-content {
+    background-color: #f8f9fa !important;
+    border: 1px solid #ddd !important;
+    border-top: none !important;
+    border-radius: 0 0 4px 4px !important;
+    padding: 10px !important;
+}
+
+/* ========================================================================
+   INDICATEURS DE STATUT ET BADGES
+   ======================================================================== */
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.status-indicator.status-up { background-color: #28a745; }
+.status-indicator.status-down { background-color: #dc3545; }
+.status-indicator.status-warning { background-color: #ffc107; }
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.badge-up { background-color: #28a745; }
+.badge-down { background-color: #dc3545; }
+.badge-warning { background-color: #fd7e14; }
+.badge-info { background-color: #17a2b8; }
+
+/* ========================================================================
+   CARTES AMÉLIORÉES POUR PORTS
+   ======================================================================== */
+.port-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.port-card:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.port-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.port-name {
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.port-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 120px;
+}
+
+.detail-value {
+    color: #2c3e50;
+    font-weight: 400;
+    text-align: right;
+}
+
+/* ========================================================================
+   STYLES POUR LES ENTITÉS MÈRES (ÉQUIPEMENTS, CHÂSSIS, ETC.)
+   ======================================================================== */
+.entity-accordion {
+    margin: 15px 0;
+    border: none !important;
+}
+
+.entity-accordion .ui-accordion-header {
+    background: linear-gradient(135deg, #34495e, #2c3e50) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 5px !important;
+    margin: 4px 0 !important;
+    padding: 10px 12px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.entity-accordion .ui-accordion-header:hover {
+    background: linear-gradient(135deg, #2c3e50, #1b2631) !important;
+}
+
+.entity-accordion .ui-accordion-header.ui-state-active {
+    background: linear-gradient(135deg, #f39c12, #d68910) !important;
+    border-radius: 5px 5px 0 0 !important;
+}
+
+.entity-accordion .ui-accordion-content {
+    background-color: #ffffff !important;
+    border: 1px solid #ddd !important;
+    border-top: none !important;
+    border-radius: 0 0 5px 5px !important;
+    padding: 15px !important;
+}
+
+/* ========================================================================
+   AMÉLIORATION DES ICÔNES JQUERY UI
+   ======================================================================== */
+.ui-accordion-header .ui-icon {
+    left: 8px !important;
+    top: 50% !important;
+    margin-top: -8px !important;
+}
+
+.ui-accordion-header .ui-icon:before {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    content: "\f0da" !important; /* fa-caret-right */
+    background-image: none !important;
+    width: auto !important;
+    height: auto !important;
+    color: white !important;
+}
+
+.ui-accordion-header.ui-state-active .ui-icon:before {
+    content: "\f0d7" !important; /* fa-caret-down */
+}
+
+/* ========================================================================
+   ANIMATION ET TRANSITIONS PERSONNALISÉES
+   ======================================================================== */
+.ui-accordion .ui-accordion-content {
+    overflow: hidden !important;
+}
+
+.ui-accordion-content-active {
+    overflow: visible !important;
+}
+
+/* ========================================================================
+   STYLES POUR LES INFORMATIONS SFP/QSFP DANS LES ACCORDÉONS
+   ======================================================================== */
+.sfp-info {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.sfp-info strong {
+    color: #3498db;
+    font-size: 14px;
+}
+
+/* ========================================================================
+   TABLEAUX DANS LES ACCORDÉONS
+   ======================================================================== */
+.accordion-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.accordion-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+}
+
+.accordion-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 13px;
+}
+
+.accordion-table tr:last-child td {
+    border-bottom: none;
+}
+
+.accordion-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* ========================================================================
+   COMPTEURS ET STATISTIQUES DANS LES EN-TÊTES
+   ======================================================================== */
+.accordion-header-stats {
+    float: right;
+    margin-left: 10px;
+}
+
+.accordion-header-stats .badge {
+    margin-left: 5px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+/* ========================================================================
+   STYLES POUR LES MESSAGES D'ÉTAT
+   ======================================================================== */
+.accordion-status-message {
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 13px;
+}
+
+.accordion-status-message.success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.accordion-status-message.warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.accordion-status-message.error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+/* ========================================================================
+   MEDIA QUERIES
+   ======================================================================== */
+@media (max-width: 768px) {
+    #rectangleBleu, #rectangleDonnee, #rectangleGris, #rectangleIDservice {
+        width: 90%;
+        left: 5%;
+    }
+
+    #rectangleGris, #rectangleIDservice {
+        top: auto;
+        bottom: 0;
+        margin-bottom: 10px;
+    }
+
+    #texteMES, #texteService, #zone_texte, #Bouton {
+        font-size: 1rem;
+    }
+
+    #zone_texte {
+        width: 40%;
+    }
+
+    #Bouton {
+        width: 30%;
+    }
+    
+    .port-details {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    
+    .detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .detail-label {
+        min-width: auto;
+        margin-bottom: 2px;
+    }
+    
+    .detail-value {
+        text-align: left;
+        font-weight: 500;
+    }
+    
+    .equipment-accordion .ui-accordion-header,
+    .ports-accordion .ui-accordion-header,
+    .entity-accordion .ui-accordion-header {
+        padding: 8px 10px !important;
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #rectangleGris, #rectangleIDservice {
+        width: 95%;
+        left: 2.5%;
+    }
+
+    #zone_texte {
+        width: 70%;
+    }
+
+    #Bouton {
+        width: 50%;
+    }
 }

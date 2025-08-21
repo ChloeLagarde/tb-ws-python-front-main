@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Validation MES ARI</title>
 
-    <script src="https://kit.fontawesome.com/8c1d7360d9.js" crossorigin="anonymous"></script>
+    <!-- jQuery UI CSS et JS - AJOUTE AVANT VOS SCRIPTS EXISTANTS -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-lightness/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    
+    <!-- Vos dépendances existantes -->
+    <script src="https://kit.fontawesome.com/8c1d7360d9.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Vos fichiers CSS et JS -->
     <link rel="stylesheet" href="./valid_mes.css" />
     <script type="module" src="./valid_mes.js"></script>
-    
-   <!-- Font Awesome pour les icônes -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="content">
@@ -22,6 +27,10 @@
             <div id="rectangleIDservice" class="form-group">
                 <label for="zone_texte">ID de service</label>
                 <input type="text" id="zone_texte" placeholder="Entrez votre ID" />
+                
+                <!-- Champs conditionnels pour PBB (cachés par défaut) -->
+                <input type="text" id="ipInput" class="hidden" placeholder="IP ou Port" style="display: none;" />
+                <input type="text" id="slotInput" class="hidden" placeholder="Slot" style="display: none;" />
             </div>
             
             <button id="Bouton" class="btn-verification">
