@@ -1,5 +1,81 @@
 import MappingEMUX from './mappingEMUX.js';
 
+// Fonction pour créer un dépliant natif
+function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
+    let content = '<div class="native-accordion">';
+    
+    ports.forEach((port, index) => {
+        const portId = `port-${index}-${Date.now()}`;
+        const headerId = `header-${index}-${Date.now()}`;
+        
+        // Header du port
+        content += `
+            <div class="accordion-header" onclick="toggleAccordionItem('${portId}', '${headerId}')">
+                <div class="accordion-content-wrapper">
+                    <span class="accordion-title">Port ${port.port ?? 'N/A'}</span>
+                </div>
+                <span class="accordion-icon">▶</span>
+            </div>
+        `;
+        
+        // Contenu du port
+        content += `<div class="accordion-content" id="${portId}" style="display: none;">`;
+        content += `<div class="port-box">`;
+        content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
+        content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
+        content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
+        content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
+        content += `<p><strong>Signal RX :</strong> ${formatOpticalPower(port.signal_optique_rx)}</p>`;
+        
+        if (port.threshold) {
+            content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
+        }
+        
+        content += `<p><strong>Signal TX :</strong> ${formatOpticalPower(port.signal_optique_tx)}</p>`;
+        
+        if (port.threshold) {
+            content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
+        }
+        
+        content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
+        content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
+        content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
+        content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
+        content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
+
+        if (port.type_sfp) {
+            content += `<h5>Informations SFP/QSFP</h5>`;
+            content += `<p><strong>PID :</strong> ${port.type_sfp?.PID ?? 'N/A'}</p>`;
+            content += `<p><strong>Type Optique :</strong> ${port.type_sfp?.['Optics type'] ?? 'N/A'}</p>`;
+            content += `<p><strong>Nom :</strong> ${port.type_sfp?.Name ?? 'N/A'}</p>`;
+            content += `<p><strong>Part Number :</strong> ${port.type_sfp?.['Part Number'] ?? 'N/A'}</p>`;
+        }
+        
+        content += `</div></div>`;
+    });
+    
+    content += '</div>';
+    return content;
+}
+
+// Fonction globale pour basculer l'affichage
+window.toggleAccordionItem = function(contentId, headerId) {
+    const content = document.getElementById(contentId);
+    const header = document.querySelector(`[onclick*="${contentId}"]`);
+    const icon = header?.querySelector('.accordion-icon');
+    
+    if (content && header && icon) {
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '▼';
+            header.classList.add('active');
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▶';
+            header.classList.remove('active');
+        }
+    }
+};
 
 export function afficherOLT(data) {
     console.log('afficherOLT()');
@@ -365,46 +441,7 @@ export function afficherPBB(data) {
 
     if (data.ports?.length > 0) {
         content += `<h2>Ports (${data.ports.length})</h2>`;
-
-        data.ports.forEach(port => {
-            content += `<div class="port-box">`;
-            content += `<h4>Port ${port.port}</h4>`;
-            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-            content += `<p><strong>Signal RX :</strong> ${formatOpticalPower(port.signal_optique_rx)}</p>`;
-            
-            // Ajouter le seuil RX directement sous la valeur RX
-            if (port.threshold) {
-                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-            }
-            
-            content += `<p><strong>Signal TX :</strong> ${formatOpticalPower(port.signal_optique_tx)}</p>`;
-            
-            // Ajouter le seuil TX directement sous la valeur TX
-            if (port.threshold) {
-                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-            }
-            
-            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-
-            // Informations SFP/QSFP si disponibles
-            if (port.type_sfp) {
-                content += `<h5>Informations SFP/QSFP</h5>`;
-                content += `<p><strong>PID :</strong> ${port.type_sfp?.PID ?? 'N/A'}</p>`;
-                content += `<p><strong>Type Optique :</strong> ${port.type_sfp?.['Optics type'] ?? 'N/A'}</p>`;
-                content += `<p><strong>Nom :</strong> ${port.type_sfp?.Name ?? 'N/A'}</p>`;
-                content += `<p><strong>Part Number :</strong> ${port.type_sfp?.['Part Number'] ?? 'N/A'}</p>`;
-            }
-            
-            content += `</div>`;
-        });
+        content += createNativePortAccordion(data.ports, formatStatus, formatOpticalPower);
     } else {
         content += `<p class="no-data">Aucun port trouvé</p>`;
     }
@@ -502,6 +539,27 @@ export function afficherService(data) {
         return `<span class="${colorClass}">${displayValue}</span>`;
     }
 
+    // Fonction pour formater les puissances optiques (version simple)
+    function formatOpticalPower(powerValue) {
+        if (!powerValue || powerValue === 'N/A') {
+            return `<span class="status-warning">N/A</span>`;
+        }
+
+        const numericPower = parseFloat(powerValue.toString().replace(/[^\d.-]/g, ''));
+        
+        if (isNaN(numericPower)) {
+            return `<span class="status-warning">${powerValue}</span>`;
+        }
+
+        if (numericPower < -25) {
+            return `<span class="power-danger">${powerValue}</span>`;
+        } else if (numericPower < -15) {
+            return `<span class="power-warning">${powerValue}</span>`;
+        } else {
+            return `<span class="power-good">${powerValue}</span>`;
+        }
+    }
+
     // Vérifier si les données sont dans le format "service" (avec equipments) ou "equipment" (avec equipment_info)
     if (data.equipments && Array.isArray(data.equipments)) {
         // Format service avec plusieurs équipements
@@ -537,56 +595,13 @@ export function afficherService(data) {
                                     versionCell.innerHTML = formattedVersion;
                                 }
                             });
-                        }, 100 + (index * 10)); // Délai échelonné pour éviter les conflits
+                        }, 100 + (index * 10));
                     }
 
-                    // Affichage des ports si disponibles
+                    // Affichage des ports si disponibles avec dépliant natif
                     if (script.ports && script.ports.length > 0) {
                         content += `<h4>Ports détaillés</h4>`;
-
-                        script.ports.forEach(port => {
-                            // Formater les puissances avec couleurs
-                            const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
-                            const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
-                            
-                            content += `<div class="port-box">`;
-                            content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
-                            content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-                            content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-                            content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-                            content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-                            content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-                            content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
-                            
-                            // Ajouter le seuil RX directement sous la valeur RX
-                            if (port.threshold) {
-                                content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-                            }
-                            
-                            content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
-                            
-                            // Ajouter le seuil TX directement sous la valeur TX
-                            if (port.threshold) {
-                                content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-                            }
-                            
-                            content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-                            content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-                            content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-                            content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-                            content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-                            
-                            // Ajouter les informations SFP
-                            if (port.type_sfp) {
-                                content += `<h5>Informations SFP/QSFP</h5>`;
-                                content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
-                                content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
-                                content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
-                                content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
-                            }
-                            
-                            content += `</div>`;
-                        });
+                        content += createNativePortAccordion(script.ports, formatStatus, formatOpticalPower);
                     } else {
                         content += `<p class="no-data">Aucun port détaillé trouvé pour cet équipement.</p>`;
                     }
@@ -630,7 +645,7 @@ export function afficherService(data) {
                         versionCell.innerHTML = formattedVersion;
                     }
                 });
-            }, 100); // Délai pour que le DOM soit mis à jour
+            }, 100);
         }
 
         // Vérifier si les données semblent être des erreurs de résolution DNS
@@ -643,50 +658,7 @@ export function afficherService(data) {
 
         if (data.ports && data.ports.length > 0) {
             content += `<h2>Ports (${data.ports.length})</h2>`;
-
-            data.ports.forEach(port => {
-                // Formater les puissances avec couleurs
-                const rxPowerFormatted = formatPowerWithColor(port.signal_optique_rx, port.threshold, 'rx');
-                const txPowerFormatted = formatPowerWithColor(port.signal_optique_tx, port.threshold, 'tx');
-                
-                content += `<div class="port-box">`;
-                content += `<p><strong>Port :</strong> ${port.port ?? 'N/A'}</p>`;
-                content += `<p><strong>Bande passante :</strong> ${port.bandwidth ?? 'N/A'}</p>`;
-                content += `<p><strong>Statut :</strong> ${formatStatus(port.status, 'port')}</p>`;
-                content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
-                content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
-                content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
-                content += `<p><strong>Signal RX :</strong> ${rxPowerFormatted}</p>`;
-                
-                // Seuil en dessous de la valeur RX
-                if (port.threshold) {
-                    content += `<p class="threshold-info"><em>Seuil RX: ${port.threshold.rx_low} à ${port.threshold.rx_high} dBm</em></p>`;
-                }
-                
-                content += `<p><strong>Signal TX :</strong> ${txPowerFormatted}</p>`;
-                
-                // Seuils en dessous de la valeur TX
-                if (port.threshold) {
-                    content += `<p class="threshold-info"><em>Seuil TX: ${port.threshold.tx_low} à ${port.threshold.tx_high} dBm</em></p>`;
-                }
-                
-                content += `<p><strong>FEC :</strong> ${port.fec_state ?? 'N/A'}</p>`;
-                content += `<p><strong>Longueur d'onde :</strong> ${port.wavelength ?? 'N/A'}</p>`;
-                content += `<p><strong>Alarme :</strong> ${formatStatus(port.alarm_status, 'alarm')}</p>`;
-                content += `<p><strong>État LED :</strong> ${port.led_state ?? 'N/A'}</p>`;
-                content += `<p><strong>État Laser :</strong> ${port.laser_state ?? 'N/A'}</p>`;
-                
-                // Ajouter les informations SFP
-                if (port.type_sfp) {
-                    content += `<h4>Informations SFP/QSFP</h4>`;
-                    content += `<p><strong>PID :</strong> ${port.type_sfp.PID ?? 'N/A'}</p>`;
-                    content += `<p><strong>Type Optique :</strong> ${port.type_sfp['Optics type'] ?? 'N/A'}</p>`;
-                    content += `<p><strong>Nom :</strong> ${port.type_sfp.Name ?? 'N/A'}</p>`;
-                    content += `<p><strong>Part Number :</strong> ${port.type_sfp['Part Number'] ?? 'N/A'}</p>`;
-                }
-                
-                content += `</div>`;
-            });
+            content += createNativePortAccordion(data.ports, formatStatus, formatOpticalPower);
         } else {
             content += `<div class="no-data">
                 <p><strong>Aucun port trouvé</strong></p>
@@ -697,8 +669,6 @@ export function afficherService(data) {
         return content;
     }
 }
-
-
 
 export function afficherServiceWDM(dataToDisplay) {
     const equipementData = dataToDisplay.find(item => item["Nom equipement"]);

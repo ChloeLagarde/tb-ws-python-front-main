@@ -940,3 +940,267 @@ hr {
     margin: 20px 0 !important;
     color: #6c757d !important;
 }
+
+/* ========================================================================
+   STYLES POUR LES ACCORDIONS NATIFS (VERSION BOUTONS STYLISÉS)
+   ======================================================================== */
+
+.native-accordion {
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 15px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #ffffff;
+}
+
+.accordion-header {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    font-weight: 500;
+    min-height: 36px;
+}
+
+.accordion-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.accordion-header:hover::before {
+    left: 100%;
+}
+
+.accordion-header:hover {
+    background: linear-gradient(135deg, #2e8bc9 0%, #2471a3 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+}
+
+.accordion-header.active {
+    background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.accordion-header.active:hover {
+    background: linear-gradient(135deg, #5499c7 0%, #2e8bc9 100%);
+}
+
+.accordion-header:last-of-type {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.accordion-header:first-of-type {
+    border-radius: 8px 8px 0 0;
+}
+
+.accordion-header:only-child {
+    border-radius: 8px;
+}
+
+.accordion-content-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.accordion-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.accordion-icon {
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.accordion-header.active .accordion-icon {
+    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.accordion-content {
+    background: #ffffff;
+    border-left: 4px solid #3498db;
+    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0;
+    overflow: hidden;
+}
+
+.accordion-content .port-box {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background-color: #ffffff;
+    box-shadow: none;
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.accordion-content:last-child .port-box {
+    border-bottom: none;
+}
+
+/* Animation pour l'ouverture */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================================================
+   STYLES POUR LES ACCORDIONS JQUERY UI (PORTS)
+   ======================================================================== */
+
+/* Conteneur principal des accordions de ports */
+.ports-accordion {
+    margin: 15px 0;
+    border: 1px solid #d3d3d3;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Headers des accordions (titres des ports) */
+.ports-accordion .ui-accordion-header {
+    background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%) !important;
+    border: none !important;
+    border-bottom: 1px solid #d3d3d3 !important;
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 12px 15px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+/* État au survol des headers */
+.ports-accordion .ui-accordion-header:hover {
+    background: linear-gradient(to bottom, #e9ecef 0%, #d3d3d3 100%) !important;
+    color: #1a73e8 !important;
+}
+
+/* Header actif/ouvert */
+.ports-accordion .ui-accordion-header.ui-state-active {
+    background: linear-gradient(to bottom, #3498db 0%, #2980b9 100%) !important;
+    color: white !important;
+    border-bottom: 1px solid #2980b9 !important;
+}
+
+/* Contenu des accordions */
+.ports-accordion .ui-accordion-content {
+    background: #ffffff !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* Contenu spécifique aux ports dans l'accordion */
+.port-accordion-content {
+    padding: 0;
+    margin: 0;
+}
+
+/* Ajustements pour les boîtes de ports dans les accordions */
+.port-accordion-content .port-box {
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* Masquer les icônes par défaut de jQuery UI */
+.ports-accordion .ui-accordion-header .ui-icon {
+    display: none !important;
+}
+
+/* Ajouter nos propres icônes personnalisées */
+.ports-accordion .ui-accordion-header:before {
+    content: '▶' !important;
+    float: left !important;
+    margin-right: 8px !important;
+    font-size: 12px !important;
+    transition: transform 0.3s ease !important;
+    display: inline-block !important;
+}
+
+.ports-accordion .ui-accordion-header.ui-state-active:before {
+    transform: rotate(90deg) !important;
+}
+
+/* Dernier élément sans bordure en bas */
+.ports-accordion .ui-accordion-header:last-of-type {
+    border-bottom: none !important;
+}
+
+/* Responsive pour les accordions */
+@media (max-width: 768px) {
+    .ports-accordion .ui-accordion-header {
+        font-size: 13px !important;
+        padding: 10px 12px !important;
+    }
+    
+    .port-accordion-content .port-box {
+        padding: 10px !important;
+    }
+}
+
+/* Animations personnalisées pour l'ouverture/fermeture */
+.ports-accordion .ui-accordion-content {
+    overflow: hidden !important;
+}
+
+/* Style pour les headers d'accordion avec statut */
+.ports-accordion .ui-accordion-header .status-up,
+.ports-accordion .ui-accordion-header .status-down,
+.ports-accordion .ui-accordion-header .status-warning {
+    margin-left: 8px;
+    font-size: 12px;
+    padding: 2px 6px;
+}
+
+/* Ajustement de hauteur pour le contenu */
+.ports-accordion .ui-accordion-content {
+    max-height: none !important;
+}
