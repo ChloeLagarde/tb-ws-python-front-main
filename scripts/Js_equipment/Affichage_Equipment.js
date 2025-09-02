@@ -25,6 +25,15 @@ function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
         content += `<p><strong>Admin :</strong> ${formatStatus(port.admin_status, 'admin')}</p>`;
         content += `<p><strong>MAC :</strong> ${port.physical_address ?? 'N/A'}</p>`;
         content += `<p><strong>Description :</strong> ${port.description ?? 'N/A'}</p>`;
+        
+        // Informations de bundle si disponibles
+        if (port.bundle && port.bundle !== 'N/A') {
+            content += `<h5>Informations Bundle</h5>`;
+            content += `<p><strong>Bundle :</strong> ${port.bundle}</p>`;
+            content += `<p><strong>Status Bundle :</strong> ${formatStatus(port.status_bundle, 'admin')}</p>`;
+            content += `<p><strong>État :</strong> ${formatStatus(port.state, 'admin')}</p>`;
+        }
+        
         content += `<p><strong>Signal RX :</strong> ${formatOpticalPower(port.signal_optique_rx)}</p>`;
         
         if (port.threshold) {
@@ -58,6 +67,89 @@ function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
     return content;
 }
 
+// Fonction pour créer le tableau des LAGs/Bundles
+function createLAGsTable(lags) {
+    if (!lags || lags.length === 0) {
+        return '';
+    }
+
+    let content = `<h2>LAGs/Bundles (${lags.length})</h2>`;
+    content += `<table class="table_olt">`;
+    content += `<thead>
+        <tr>
+            <th>Bundle</th>
+            <th>Status</th>
+            <th>Ports</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>`;
+
+    lags.forEach((lag, lagIndex) => {
+        const lagId = `lag-${lagIndex}-${Date.now()}`;
+        
+        // Formatage du statut
+        let statusClass = 'status-warning';
+        if (lag.status && lag.status.toLowerCase() === 'up') {
+            statusClass = 'status-up';
+        } else if (lag.status && lag.status.toLowerCase() === 'down') {
+            statusClass = 'status-down';
+        }
+
+        // Comptage des ports
+        const portCount = lag.ports ? lag.ports.length : 0;
+        const activePortCount = lag.ports ? lag.ports.filter(p => p.state && p.state.toLowerCase() === 'active').length : 0;
+
+        content += `<tr>
+            <td><strong>${lag.bundle_name ?? 'N/A'}</strong></td>
+            <td><span class="${statusClass}">${lag.status ?? 'N/A'}</span></td>
+            <td>${activePortCount}/${portCount} ports</td>
+            <td><button onclick="toggleLagDetails('${lagId}')" class="btn-lag-details">Détails</button></td>
+        </tr>`;
+
+        // Ligne de détails (cachée par défaut)
+        content += `<tr id="${lagId}" style="display: none;">
+            <td colspan="4">
+                <div class="lag-details">`;
+
+        if (lag.ports && lag.ports.length > 0) {
+            content += `<h4>Ports du bundle ${lag.bundle_name}</h4>
+                <table class="lag-ports-table">
+                    <thead>
+                        <tr>
+                            <th>Port</th>
+                            <th>État</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            lag.ports.forEach(port => {
+                let portStateClass = 'status-warning';
+                if (port.state && port.state.toLowerCase() === 'active') {
+                    portStateClass = 'status-up';
+                } else if (port.state && port.state.toLowerCase() === 'inactive') {
+                    portStateClass = 'status-down';
+                }
+
+                content += `<tr>
+                    <td>${port.port ?? 'N/A'}</td>
+                    <td><span class="${portStateClass}">${port.state ?? 'N/A'}</span></td>
+                </tr>`;
+            });
+
+            content += `</tbody></table>`;
+        } else {
+            content += `<p>Aucun port configuré pour ce bundle</p>`;
+        }
+
+        content += `</div></td></tr>`;
+    });
+
+    content += `</tbody></table>`;
+
+    return content;
+}
+
 // Fonction globale pour basculer l'affichage
 window.toggleAccordionItem = function(contentId, headerId) {
     const content = document.getElementById(contentId);
@@ -73,6 +165,22 @@ window.toggleAccordionItem = function(contentId, headerId) {
             content.style.display = 'none';
             icon.textContent = '▶';
             header.classList.remove('active');
+        }
+    }
+};
+
+// Fonction globale pour basculer les détails des LAGs
+window.toggleLagDetails = function(lagId) {
+    const lagRow = document.getElementById(lagId);
+    const button = document.querySelector(`[onclick="toggleLagDetails('${lagId}')"]`);
+    
+    if (lagRow && button) {
+        if (lagRow.style.display === 'none') {
+            lagRow.style.display = 'table-row';
+            button.textContent = 'Masquer';
+        } else {
+            lagRow.style.display = 'none';
+            button.textContent = 'Détails';
         }
     }
 };
@@ -439,6 +547,11 @@ export function afficherPBB(data) {
         }, 100);
     }
 
+    // Affichage des LAGs/Bundles
+    if (data.lags && data.lags.length > 0) {
+        content += createLAGsTable(data.lags);
+    }
+
     if (data.ports?.length > 0) {
         content += `<h2>Ports (${data.ports.length})</h2>`;
         content += createNativePortAccordion(data.ports, formatStatus, formatOpticalPower);
@@ -598,6 +711,11 @@ export function afficherService(data) {
                         }, 100 + (index * 10));
                     }
 
+                    // Affichage des LAGs/Bundles pour cet équipement
+                    if (script.lags && script.lags.length > 0) {
+                        content += createLAGsTable(script.lags);
+                    }
+
                     // Affichage des ports si disponibles avec dépliant natif
                     if (script.ports && script.ports.length > 0) {
                         content += `<h4>Ports détaillés</h4>`;
@@ -654,6 +772,11 @@ export function afficherService(data) {
                 <strong>Attention :</strong> Les informations DNS ne peuvent pas être résolues. 
                 Cela peut indiquer un problème de connectivité ou que l'équipement n'est pas accessible.
             </div>`;
+        }
+
+        // Affichage des LAGs/Bundles
+        if (data.lags && data.lags.length > 0) {
+            content += createLAGsTable(data.lags);
         }
 
         if (data.ports && data.ports.length > 0) {
