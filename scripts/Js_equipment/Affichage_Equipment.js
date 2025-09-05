@@ -679,7 +679,7 @@ export function afficherService(data) {
         let content = `<h2>Informations du service</h2>`;
         
         content += `<p><strong>Service ID :</strong> ${data.service_id ?? 'N/A'}</p>`;
-        content += `<p><strong>Statut :</strong> ${formatStatus(data.success ? 'Succès' : 'Échec')}</p>`;
+        content += `<p><strong>Statut :</strong> ${formatStatus(data.Statut ?? 'N/A')}</p>`;
         content += `<p><strong>Nombre d'équipements :</strong> ${data.equipment_count ?? 'N/A'}</p>`;
 
         // Affichage des équipements
