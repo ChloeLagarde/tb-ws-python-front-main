@@ -794,6 +794,44 @@ hr {
    STYLES POUR LES STATUTS ET PUISSANCES OPTIQUES
    ======================================================================== */
 
+
+/* Classes pour les statuts généraux */
+.status-up {
+    background-color: #5cb85c !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.status-down {
+    background-color: #d9534f !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.status-admin-down {
+    background-color: #8e44ad !important; /* Couleur violette */
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
+.status-warning {
+    background-color: #f0ad4e !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+}
+
 /* Classes pour les puissances optiques */
 .power-good {
     background-color: #5cb85c !important;
@@ -815,34 +853,6 @@ hr {
 
 .power-danger {
     background-color: #d9534f !important;
-    color: white !important;
-    padding: 4px 8px !important;
-    border-radius: 4px !important;
-    font-weight: bold !important;
-    display: inline-block !important;
-}
-
-/* Classes pour les statuts généraux */
-.status-up {
-    background-color: #5cb85c !important;
-    color: white !important;
-    padding: 4px 8px !important;
-    border-radius: 4px !important;
-    font-weight: bold !important;
-    display: inline-block !important;
-}
-
-.status-down {
-    background-color: #d9534f !important;
-    color: white !important;
-    padding: 4px 8px !important;
-    border-radius: 4px !important;
-    font-weight: bold !important;
-    display: inline-block !important;
-}
-
-.status-warning {
-    background-color: #f0ad4e !important;
     color: white !important;
     padding: 4px 8px !important;
     border-radius: 4px !important;

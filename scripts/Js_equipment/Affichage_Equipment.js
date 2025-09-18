@@ -92,6 +92,8 @@ function createLAGsTable(lags) {
         let statusClass = 'status-warning';
         if (lag.status && lag.status.toLowerCase() === 'up') {
             statusClass = 'status-up';
+        } else if (lag.status && lag.status.toLowerCase().includes('admin down')) {
+            statusClass = 'status-admin-down';
         } else if (lag.status && lag.status.toLowerCase() === 'down') {
             statusClass = 'status-down';
         }
@@ -471,34 +473,36 @@ export function afficherPBB(data) {
 
     // Fonction pour formater les statuts avec couleurs
     function formatStatus(status, type = 'general') {
-        if (!status || status === 'N/A') {
-            return `<span class="status-warning">N/A</span>`;
-        }
-        
-        const statusLower = status.toString().toLowerCase();
-        
-        switch (type) {
-            case 'admin':
-            case 'port':
-                if (statusLower === 'up') {
-                    return `<span class="status-up">${status}</span>`;
-                } else if (statusLower === 'down') {
-                    return `<span class="status-down">${status}</span>`;
-                } else {
-                    return `<span class="status-warning">${status}</span>`;
-                }
-                
-            case 'alarm':
-                if (statusLower === 'none' || statusLower === 'aucune') {
-                    return `<span class="alarm-none">${status}</span>`;
-                } else {
-                    return `<span class="alarm-active">${status}</span>`;
-                }
-                
-            default:
-                return `<span>${status}</span>`;
-        }
+    if (!status || status === 'N/A') {
+        return `<span class="status-warning">N/A</span>`;
     }
+    
+    const statusLower = status.toString().toLowerCase();
+    
+    switch (type) {
+        case 'admin':
+        case 'port':
+            if (statusLower === 'up') {
+                return `<span class="status-up">${status}</span>`;
+            } else if (statusLower.includes('admin down')) {
+                return `<span class="status-admin-down">${status}</span>`;
+            } else if (statusLower === 'down') {
+                return `<span class="status-down">${status}</span>`;
+            } else {
+                return `<span class="status-warning">${status}</span>`;
+            }
+            
+        case 'alarm':
+            if (statusLower === 'none' || statusLower === 'aucune') {
+                return `<span class="alarm-none">${status}</span>`;
+            } else {
+                return `<span class="alarm-active">${status}</span>`;
+            }
+            
+        default:
+            return `<span>${status}</span>`;
+    }
+}
 
     // Fonction pour formater les puissances optiques
     function formatOpticalPower(powerValue) {
