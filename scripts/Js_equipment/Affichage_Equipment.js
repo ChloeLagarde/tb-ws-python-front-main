@@ -1,5 +1,29 @@
 import MappingEMUX from './mappingEMUX.js';
 
+// Fonction pour normaliser les noms de ports pour la comparaison
+function normalizePortName(portName) {
+    if (!portName) return '';
+    
+    // Convertir en string et nettoyer
+    let normalized = portName.toString().trim();
+    
+    // Enlever les préfixes courants (0/0/0/, .0/0/0/, FH, etc.)
+    normalized = normalized.replace(/^\.?0\/0\/0\//, ''); // Enlève 0/0/0/ ou .0/0/0/
+    normalized = normalized.replace(/^FH/, ''); // Enlève FH
+    normalized = normalized.replace(/^TenGigE/, ''); // Enlève TenGigE
+    normalized = normalized.replace(/^HundredGigE/, ''); // Enlève HundredGigE
+    normalized = normalized.replace(/^FortyGigE/, ''); // Enlève FortyGigE
+    
+    // Garder seulement la partie numérique (ex: "8" ou "8/2")
+    return normalized;
+}
+
+// Fonction pour créer un ID d'ancre basé sur le nom de port normalisé
+function createPortAnchorId(portName) {
+    const normalized = normalizePortName(portName);
+    return `port-detail-${normalized.replace(/[^a-zA-Z0-9]/g, '-')}`;
+}
+
 // Fonction pour créer un dépliant natif
 function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
     let content = '<div class="native-accordion">';
@@ -8,9 +32,12 @@ function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
         const portId = `port-${index}-${Date.now()}`;
         const headerId = `header-${index}-${Date.now()}`;
         
-        // Header du port
+        // Créer un ID d'ancre unique pour ce port basé sur la version normalisée
+        const portAnchorId = createPortAnchorId(port.port);
+        
+        // Header du port avec ancre
         content += `
-            <div class="accordion-header" onclick="toggleAccordionItem('${portId}', '${headerId}')">
+            <div class="accordion-header" id="${portAnchorId}" data-port-name="${port.port ?? 'N/A'}" onclick="toggleAccordionItem('${portId}', '${headerId}')">
                 <div class="accordion-content-wrapper">
                     <span class="accordion-title">Port ${port.port ?? 'N/A'}</span>
                 </div>
@@ -28,7 +55,12 @@ function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
         
         // Informations de bundle si disponibles
         if (port.bundle && port.bundle !== 'N/A') {
-            content += `<h5>Informations Bundle</h5>`;
+            // Créer un ID d'ancre pour le bundle basé sur son nom
+            const bundleAnchorId = `lag-details-${port.bundle?.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            
+            content += `<h5>Informations Bundle 
+                <button onclick="scrollToBundle('${bundleAnchorId}')" class="btn-bundle-nav" title="Voir le bundle complet">Voir Bundle</button>
+            </h5>`;
             content += `<p><strong>Bundle :</strong> ${port.bundle}</p>`;
             content += `<p><strong>Status Bundle :</strong> ${formatStatus(port.status_bundle, 'admin')}</p>`;
             content += `<p><strong>État :</strong> ${formatStatus(port.state, 'admin')}</p>`;
@@ -109,10 +141,13 @@ function createLAGsTable(lags) {
             <td><button onclick="toggleLagDetails('${lagId}')" class="btn-lag-details">Détails</button></td>
         </tr>`;
 
+        // Créer un ID d'ancre unique pour ce bundle
+        const bundleAnchorId = `lag-details-${lag.bundle_name?.replace(/[^a-zA-Z0-9]/g, '-') ?? 'na'}`;
+
         // Ligne de détails (cachée par défaut)
-        content += `<tr id="${lagId}" style="display: none;">
+        content += `<tr id="${lagId}" data-anchor="${bundleAnchorId}" style="display: none;">
             <td colspan="4">
-                <div class="lag-details">`;
+                <div class="lag-details" id="${bundleAnchorId}">`;
 
         if (lag.ports && lag.ports.length > 0) {
             content += `<h4>Ports du bundle ${lag.bundle_name}</h4>
@@ -133,9 +168,15 @@ function createLAGsTable(lags) {
                     portStateClass = 'status-down';
                 }
 
+                // Créer un ID unique pour le port basé sur la version normalisée
+                const portAnchorId = createPortAnchorId(port.port);
+
                 content += `<tr>
                     <td>${port.port ?? 'N/A'}</td>
-                    <td><span class="${portStateClass}">${port.state ?? 'N/A'}</span></td>
+                    <td>
+                        <span class="${portStateClass}">${port.state ?? 'N/A'}</span>
+                        <button onclick="scrollToPort('${portAnchorId}')" class="btn-port-nav" title="Voir les détails du port">Plus</button>
+                    </td>
                 </tr>`;
             });
 
@@ -184,6 +225,101 @@ window.toggleLagDetails = function(lagId) {
             lagRow.style.display = 'none';
             button.textContent = 'Détails';
         }
+    }
+};
+
+// Fonction globale pour scroller vers un port spécifique
+window.scrollToPort = function(portAnchorId) {
+    console.log('Recherche du port avec ancre:', portAnchorId);
+    
+    // D'abord essayer de trouver directement par ID
+    let portElement = document.getElementById(portAnchorId);
+    
+    // Si pas trouvé, chercher tous les éléments avec des data-port-name et comparer les versions normalisées
+    if (!portElement) {
+        console.log('Port non trouvé par ID, recherche alternative...');
+        
+        const allPortHeaders = document.querySelectorAll('.accordion-header[data-port-name]');
+        
+        // Extraire le nom de port normalisé de l'ancre recherchée
+        const searchedNormalized = portAnchorId.replace('port-detail-', '').replace(/-/g, '/');
+        console.log('Nom de port normalisé recherché:', searchedNormalized);
+        
+        for (const header of allPortHeaders) {
+            const portName = header.getAttribute('data-port-name');
+            const normalizedPortName = normalizePortName(portName);
+            
+            console.log(`Comparaison: "${normalizedPortName}" avec "${searchedNormalized}"`);
+            
+            if (normalizedPortName === searchedNormalized || 
+                normalizedPortName === searchedNormalized.replace(/\//g, '-')) {
+                portElement = header;
+                console.log('Port trouvé !', portName);
+                break;
+            }
+        }
+    }
+    
+    if (portElement) {
+        // Ouvrir l'accordion si fermé
+        const accordionContent = portElement.nextElementSibling;
+        const icon = portElement.querySelector('.accordion-icon');
+        
+        if (accordionContent && accordionContent.style.display === 'none') {
+            accordionContent.style.display = 'block';
+            if (icon) icon.textContent = '▼';
+            portElement.classList.add('active');
+        }
+        
+        // Scroll vers l'élément avec un délai pour l'animation
+        setTimeout(() => {
+            portElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Ajouter un effet de highlight temporaire
+            const originalBg = portElement.style.backgroundColor;
+            portElement.style.backgroundColor = '#fff3cd';
+            setTimeout(() => {
+                portElement.style.backgroundColor = originalBg;
+            }, 2000);
+        }, 300);
+    } else {
+        console.error('Port non trouvé avec ancre:', portAnchorId);
+        alert(`Port non trouvé. ID recherché: ${portAnchorId}`);
+    }
+};
+
+// Fonction globale pour scroller vers un bundle spécifique
+window.scrollToBundle = function(bundleAnchorId) {
+    const bundleRow = document.getElementById(bundleAnchorId);
+    if (bundleRow) {
+        // Trouver la ligne parente (tr) qui contient les détails
+        const parentTr = bundleRow.closest('tr');
+        
+        // Ouvrir les détails du bundle si fermés
+        if (parentTr && parentTr.style.display === 'none') {
+            parentTr.style.display = 'table-row';
+            
+            // Trouver le lagId depuis l'attribut id du tr
+            const lagId = parentTr.id;
+            const button = document.querySelector(`[onclick="toggleLagDetails('${lagId}')"]`);
+            if (button) {
+                button.textContent = 'Masquer';
+            }
+        }
+        
+        // Scroll vers l'élément
+        setTimeout(() => {
+            bundleRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Ajouter un effet de highlight temporaire
+            const originalBg = bundleRow.style.backgroundColor;
+            bundleRow.style.backgroundColor = '#d1ecf1';
+            setTimeout(() => {
+                bundleRow.style.backgroundColor = originalBg;
+            }, 2000);
+        }, 300);
+    } else {
+        console.error('Bundle non trouvé avec ancre:', bundleAnchorId);
     }
 };
 
@@ -449,6 +585,7 @@ function compareVersions(current, latest) {
         return isNaN(num) ? 0 : num;
     });
     
+    
     // Comparer chaque partie de version
     const maxLength = Math.max(currentParts.length, latestParts.length);
     
@@ -526,6 +663,7 @@ export function afficherPBB(data) {
         } else if (numericPower < -15) {
             return `<span class="power-warning">${powerValue}</span>`;
         } else {
+            return
             return `<span class="power-good">${powerValue}</span>`;
         }
     }

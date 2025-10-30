@@ -1214,3 +1214,44 @@ hr {
 .ports-accordion .ui-accordion-content {
     max-height: none !important;
 }
+
+/* ========================================================================
+   BOUTONS DE NAVIGATION ENTRE BUNDLES ET PORTS
+   ======================================================================== */
+
+.btn-port-nav,
+.btn-bundle-nav {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-port-nav:hover,
+.btn-bundle-nav:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-port-nav:active,
+.btn-bundle-nav:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-bundle-nav {
+    background-color: #9b59b6;
+    vertical-align: middle;
+}
+
+.btn-bundle-nav:hover {
+    background-color: #8e44ad;
+}
