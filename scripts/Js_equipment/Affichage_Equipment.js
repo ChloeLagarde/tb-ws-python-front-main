@@ -24,7 +24,6 @@ function createPortAnchorId(portName) {
     return `port-detail-${normalized.replace(/[^a-zA-Z0-9]/g, '-')}`;
 }
 
-// Fonction pour créer un dépliant natif
 function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
     let content = '<div class="native-accordion">';
     
@@ -59,7 +58,9 @@ function createNativePortAccordion(ports, formatStatus, formatOpticalPower) {
             const bundleAnchorId = `lag-details-${port.bundle?.replace(/[^a-zA-Z0-9]/g, '-')}`;
             
             content += `<h5>Informations Bundle 
-                <button onclick="scrollToBundle('${bundleAnchorId}')" class="btn-bundle-nav" title="Voir le bundle complet">Voir Bundle</button>
+                <button onclick="scrollToBundle('${bundleAnchorId}')" class="btn-bundle-nav" title="Voir le bundle complet">
+                    <i class="fas fa-search"></i>
+                </button>
             </h5>`;
             content += `<p><strong>Bundle :</strong> ${port.bundle}</p>`;
             content += `<p><strong>Status Bundle :</strong> ${formatStatus(port.status_bundle, 'admin')}</p>`;
@@ -138,7 +139,11 @@ function createLAGsTable(lags) {
             <td><strong>${lag.bundle_name ?? 'N/A'}</strong></td>
             <td><span class="${statusClass}">${lag.status ?? 'N/A'}</span></td>
             <td>${activePortCount}/${portCount} ports</td>
-            <td><button onclick="toggleLagDetails('${lagId}')" class="btn-lag-details">Détails</button></td>
+            <td>
+                <button onclick="toggleLagDetails('${lagId}')" class="btn-lag-details" title="Voir les détails">
+                    <i class="fas fa-search"></i>
+                </button>
+            </td>
         </tr>`;
 
         // Créer un ID d'ancre unique pour ce bundle
@@ -175,7 +180,9 @@ function createLAGsTable(lags) {
                     <td>${port.port ?? 'N/A'}</td>
                     <td>
                         <span class="${portStateClass}">${port.state ?? 'N/A'}</span>
-                        <button onclick="scrollToPort('${portAnchorId}')" class="btn-port-nav" title="Voir les détails du port">Plus</button>
+                        <button onclick="scrollToPort('${portAnchorId}')" class="btn-port-nav" title="Voir les détails du port">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </td>
                 </tr>`;
             });
@@ -220,10 +227,12 @@ window.toggleLagDetails = function(lagId) {
     if (lagRow && button) {
         if (lagRow.style.display === 'none') {
             lagRow.style.display = 'table-row';
-            button.textContent = 'Masquer';
+            button.innerHTML = '<i class="fas fa-search-minus"></i>';
+            button.title = 'Masquer les détails';
         } else {
             lagRow.style.display = 'none';
-            button.textContent = 'Détails';
+            button.innerHTML = '<i class="fas fa-search"></i>';
+            button.title = 'Voir les détails';
         }
     }
 };

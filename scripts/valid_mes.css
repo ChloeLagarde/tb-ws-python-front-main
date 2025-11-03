@@ -1216,42 +1216,72 @@ hr {
 }
 
 /* ========================================================================
-   BOUTONS DE NAVIGATION ENTRE BUNDLES ET PORTS
+   BOUTONS DE NAVIGATION ENTRE BUNDLES ET PORTS (STYLE LOUPE)
    ======================================================================== */
 
 .btn-port-nav,
-.btn-bundle-nav {
+.btn-bundle-nav,
+.btn-lag-details {
     background-color: #3498db;
     color: white;
     border: none;
-    border-radius: 4px;
-    padding: 4px 12px;
+    border-radius: 50%; /* Rend le bouton circulaire */
+    padding: 8px;
+    width: 32px;
+    height: 32px;
     margin-left: 10px;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-port-nav:hover,
-.btn-bundle-nav:hover {
+.btn-bundle-nav:hover,
+.btn-lag-details:hover {
     background-color: #2980b9;
-    transform: translateY(-1px);
+    transform: scale(1.1);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 .btn-port-nav:active,
-.btn-bundle-nav:active {
-    transform: translateY(0);
+.btn-bundle-nav:active,
+.btn-lag-details:active {
+    transform: scale(0.95);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-bundle-nav {
     background-color: #9b59b6;
-    vertical-align: middle;
 }
 
 .btn-bundle-nav:hover {
     background-color: #8e44ad;
+}
+
+.btn-lag-details {
+    background-color: #27ae60;
+}
+
+.btn-lag-details:hover {
+    background-color: #229954;
+}
+
+/* Style pour l'icône de loupe à l'intérieur du bouton */
+.btn-port-nav i,
+.btn-bundle-nav i,
+.btn-lag-details i {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Animation de rotation au clic */
+.btn-port-nav:active i,
+.btn-bundle-nav:active i,
+.btn-lag-details:active i {
+    transform: rotate(15deg);
+    transition: transform 0.1s ease;
 }
