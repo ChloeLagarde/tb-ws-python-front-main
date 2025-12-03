@@ -609,6 +609,188 @@ function compareVersions(current, latest) {
     return true; // Versions identiques
 }
 
+
+// Fonction pour récupérer les données Prometheus et créer le diagramme
+async function fetchAndCreateLAGDiagram(hostname) {
+    const diagramContainer = document.createElement('div');
+    diagramContainer.className = 'lag-diagram-container';
+    diagramContainer.style.cssText = `
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    `;
+
+    try {
+        // Extraire le nom court du hostname (sans le domaine complet)
+        const shortHostname = hostname.split('.')[0];
+        
+        // Construction de l'URL avec le hostname filtré
+        const prometheusUrl = `http://promxy.query.consul:8082/api/v1/query?query=max%20by%20(hostname,%20ifName)%20(last_over_time(MetricsLagIdNokia7xxx_tmnxPortLagId%7Bhostname=~%22.*${encodeURIComponent(shortHostname)}.*%22%7D[1h]))`;
+        
+        diagramContainer.innerHTML = `
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">
+                <i class="fas fa-network-wired"></i> Cartographie des LAGs
+            </h3>
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+                <p style="margin-top: 10px; color: #666;">Récupération des données LAG...</p>
+            </div>
+        `;
+
+        const response = await fetch(prometheusUrl);
+        
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status !== 'success' || !data.data || !data.data.result || data.data.result.length === 0) {
+            diagramContainer.innerHTML = `
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">
+                    <i class="fas fa-network-wired"></i> Cartographie des LAGs
+                </h3>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 6px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #856404;"></i>
+                    <p style="margin: 5px 0 0 0; color: #856404;">Aucune donnée LAG disponible pour cet équipement</p>
+                </div>
+            `;
+            return diagramContainer;
+        }
+
+        // Organiser les données par LAG ID
+        const lagGroups = {};
+        data.data.result.forEach(item => {
+            const lagId = item.value[1];
+            const ifName = item.metric.ifName;
+            
+            if (!lagGroups[lagId]) {
+                lagGroups[lagId] = [];
+            }
+            lagGroups[lagId].push(ifName);
+        });
+
+        // Créer le diagramme visuel
+        let diagramHTML = `
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">
+                <i class="fas fa-network-wired"></i> Cartographie des LAGs
+            </h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
+        `;
+
+        // Trier les LAGs par ID
+        const sortedLagIds = Object.keys(lagGroups).sort((a, b) => parseInt(a) - parseInt(b));
+
+        sortedLagIds.forEach((lagId, index) => {
+            const ports = lagGroups[lagId];
+            const lagColor = getLagColor(index);
+            
+            diagramHTML += `
+                <div style="margin-bottom: 20px; ${index !== sortedLagIds.length - 1 ? 'border-bottom: 1px solid #dee2e6; padding-bottom: 20px;' : ''}">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <div style="
+                            background: ${lagColor};
+                            color: white;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            font-weight: bold;
+                            margin-right: 15px;
+                            min-width: 80px;
+                            text-align: center;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        ">
+                            LAG ${lagId}
+                        </div>
+                        <div style="
+                            background: white;
+                            border: 2px solid ${lagColor};
+                            border-radius: 6px;
+                            padding: 10px 15px;
+                            font-weight: 500;
+                            color: #495057;
+                        ">
+                            ${ports.length} port${ports.length > 1 ? 's' : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-left: 95px;
+                    ">
+                        ${ports.sort().map(port => `
+                            <div style="
+                                background: white;
+                                border: 1px solid ${lagColor};
+                                border-radius: 4px;
+                                padding: 6px 12px;
+                                font-size: 13px;
+                                color: #495057;
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                            ">
+                                <i class="fas fa-ethernet" style="color: ${lagColor}; font-size: 12px;"></i>
+                                <span>${port}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        diagramHTML += `
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d;">
+                    <i class="fas fa-info-circle"></i> 
+                    Données récupérées depuis Prometheus • ${data.data.result.length} interface${data.data.result.length > 1 ? 's' : ''} • ${sortedLagIds.length} LAG${sortedLagIds.length > 1 ? 's' : ''}
+                </div>
+            </div>
+        `;
+
+        diagramContainer.innerHTML = diagramHTML;
+
+    } catch (error) {
+        console.error('Erreur lors de la récupération des données LAG:', error);
+        diagramContainer.innerHTML = `
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">
+                <i class="fas fa-network-wired"></i> Cartographie des LAGs
+            </h3>
+            <div style="background: #f8d7da; padding: 15px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                <i class="fas fa-exclamation-triangle" style="color: #721c24;"></i>
+                <strong style="color: #721c24; margin-left: 8px;">Erreur de récupération</strong>
+                <p style="margin: 8px 0 0 0; color: #721c24; font-size: 14px;">
+                    Impossible de récupérer les données LAG depuis Prometheus: ${error.message}
+                </p>
+            </div>
+        `;
+    }
+
+    return diagramContainer;
+}
+
+// Fonction pour obtenir une couleur selon l'index du LAG
+function getLagColor(index) {
+    const colors = [
+        '#3498db', // Bleu
+        '#2ecc71', // Vert
+        '#e74c3c', // Rouge
+        '#f39c12', // Orange
+        '#9b59b6', // Violet
+        '#1abc9c', // Turquoise
+        '#34495e', // Gris foncé
+        '#e67e22', // Orange foncé
+    ];
+    return colors[index % colors.length];
+}
+
+
+
+
 export function afficherPBB(data) {
     console.log('afficherPBB appelée');
     console.log('Données reçues pour PBB :', data);
